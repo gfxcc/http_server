@@ -70,7 +70,13 @@ int main(int argc, char *argv[]) {
     }
     argc -= optind;
     argv += optind;
+    server_props.root = argv[optind];
     
+    server_props.root = argv[optind];
+    struct stat st_root;
+    sws_lstat(server_props.root, &st_root);
+    if(!S_ISDIR(st_root.st_mode))
+        return EXIT_FAILURE;
     
     /* Daemonize if -d not set */
     /*

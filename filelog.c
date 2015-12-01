@@ -15,8 +15,11 @@ int filelog_init(st_opts_props *sop)
 {
     if (sop->file_log != NULL)
     {
+        char logfile[PATH_MAX];
+        strcpy(logfile, "/Users/ChenWei/Desktop/dir_website/");
+        strcat(logfile, sop->file_log);
         int fd_log;
-        while ((fd_log = sws_open(sop->file_log, O_APPEND | O_CREAT | O_WRONLY | S_IRUSR
+        while ((fd_log = sws_open(logfile, O_APPEND | O_CREAT | O_WRONLY | S_IRUSR
                                  | S_IWUSR | S_IRGRP, S_IRUSR | S_IWUSR | S_IRGRP)) < 0);
         return fd_log;
     }
@@ -29,9 +32,10 @@ void filelog_record(st_opts_props *sop, st_log *log)
     if(fd_log != -1)
     {
         flock(fd_log, LOCK_EX);
-        char logline[MAX_BUFFER_LEN];
-        sprintf(logline, "%s: %s\t%s\t%d\t%lu\n", log->ip_addr, log->time, log->req, log->http_status, log->resp_len);
-        sws_write(fd_log, logline, MAX_BUFFER_LEN); close(fd_log);
+        char logline[MAX_BUFFER_LEN]; bzero(logline, MAX_BUFFER_LEN);
+        sprintf(logline, "IP:%s\tTIME: GMT %sRequestLine: %sHTTP Status Code: %d\tLength: %lu\n\n",
+                log->ip_addr, log->time, log->req, log->http_status, log->resp_len);
+        sws_write(fd_log, logline, strlen(logline));
         flock(fd_log, LOCK_UN);
         
         if (sop->debug_mode)

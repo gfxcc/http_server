@@ -18,6 +18,7 @@ typedef struct opts_props
     char *ip_address;   /* -i option, bind with the given ip_address */
     char *file_log;     /* -l option, log all request to the given file */
     char *port;         /* -p option, listen to the given port, default:8080 */
+    char *root;         /* dir as root of sws */
 }st_opts_props;
 
 void sig_chld_handler(int sig);

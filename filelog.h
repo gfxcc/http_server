@@ -14,6 +14,6 @@
 #include "sws_define.h"
 
 int filelog_init(st_opts_props *sop);
-void filelog_record(st_opts_props *sop, st_log *log);;
+void filelog_record(st_opts_props *sop, st_log *log);
 
 #endif /* filelog_h */

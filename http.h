@@ -43,7 +43,7 @@ char* sws_get_http_status(int status_code);
 char* sws_get_request_time();
 char* sws_get_mtime(time_t t);
 
-int sws_server_parseline(char* client_request_line, st_request *req);
+void sws_server_parseline(char* client_request_line, st_request *req);
 
 void sws_header_init(st_header *header);
 void sws_clireq_init(st_request *request);

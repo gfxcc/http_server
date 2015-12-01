@@ -17,6 +17,7 @@ void init_opts_props(st_opts_props *sop)
     sop->ip_address = NULL;
     sop->file_log = NULL;
     sop->port = "8080";
+    sop->root = NULL;
 }
 
 /* terminate the child to avoid zombie process */
@@ -72,13 +73,15 @@ void server_exec(st_opts_props *sop)
             printf("Debug Mode Enabled \n");
             // fetch ip address of new client
             char client_ip_addr[INET6_ADDRSTRLEN], client_request[MAX_BUFFER_LEN];
-            sws_getnameinfo((struct sockaddr*)&ss_client, sizeof(ss_client), client_ip_addr, INET6_ADDRSTRLEN, 0, 0, NI_NUMERICHOST);
+            sws_getnameinfo((struct sockaddr*)&ss_client, sizeof(ss_client),
+                            client_ip_addr, INET6_ADDRSTRLEN, 0, 0, NI_NUMERICHOST);
             printf("[Client] %s connected \n", client_ip_addr);
             
             while (sws_read(fd_connection, client_request, MAX_BUFFER_LEN) > 0)
             {
                 sws_http_request_handler(fd_connection, client_request, client_ip_addr, sop);
                 bzero(client_request, MAX_BUFFER_LEN);
+                break;
             }
             
             //sws_http_request_handler(fd_connection, client_ip_addr, sop);
@@ -95,12 +98,18 @@ void server_exec(st_opts_props *sop)
                 // close socket of father first
                 close(fd_socket);
                 char client_ip_addr[INET6_ADDRSTRLEN], client_request[MAX_BUFFER_LEN];
-                sws_getnameinfo((struct sockaddr*)&ss_client, sizeof(ss_client), client_ip_addr, INET6_ADDRSTRLEN, 0, 0, NI_NUMERICHOST);
+                sws_getnameinfo((struct sockaddr*)&ss_client, sizeof(ss_client),
+                                client_ip_addr, INET6_ADDRSTRLEN, 0, 0, NI_NUMERICHOST);
                 printf("[Client] %s connected \n", client_ip_addr);
                 
                 while (sws_read(fd_connection, client_request, MAX_BUFFER_LEN) > 0)
                 {
-                    sws_http_request_handler(fd_connection, client_request, client_ip_addr, sop);
+                    if (strlen(client_request) > 1)
+                    {
+                        sws_http_request_handler(fd_connection,
+                                                 client_request, client_ip_addr, sop);
+                        break;
+                    }
                     bzero(client_request, MAX_BUFFER_LEN);
                 }
                 
