@@ -17,7 +17,6 @@ void init_opts_props(st_opts_props *sop)
     sop->ip_address = NULL;
     sop->file_log = NULL;
     sop->port = "8080";
-    sop->root = NULL;
 }
 
 /* terminate the child to avoid zombie process */
@@ -107,7 +106,7 @@ void server_exec(st_opts_props *sop)
                     if (strlen(client_request) > 1)
                     {
                         sws_http_request_handler(fd_connection,
-                                                 client_request, client_ip_addr, sop);
+                            client_request, client_ip_addr, sop);
                         break;
                     }
                     bzero(client_request, MAX_BUFFER_LEN);

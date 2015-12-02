@@ -6,9 +6,9 @@
 //  Copyright © 2015 Chen Wei. All rights reserved.
 //
 
+#include "sws.h"
 #include "http.h"
 #include "server.h"
-#include "sws_define.h"
 
 void usage();
 
@@ -68,15 +68,17 @@ int main(int argc, char *argv[]) {
                 break;
         }
     }
-    argc -= optind;
-    argv += optind;
-    server_props.root = argv[optind];
+    //argc -= optind;
+    //argv += optind;
     
     server_props.root = argv[optind];
     struct stat st_root;
-    sws_lstat(server_props.root, &st_root);
+    lstat(server_props.root, &st_root);
     if(!S_ISDIR(st_root.st_mode))
+    {
+        fprintf(stderr, "%s is not a directory", server_props.root);
         return EXIT_FAILURE;
+    }
     
     /* Daemonize if -d not set */
     /*
@@ -84,11 +86,7 @@ int main(int argc, char *argv[]) {
         sws_daemon(1, 0);
     */
     server_exec(&server_props);
-    
     return EXIT_SUCCESS;
-    
-    
-    return 0;
 }
 
 void usage()

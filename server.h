@@ -9,7 +9,7 @@
 #ifndef server_h
 #define server_h
 
-#include "sws_define.h"
+#include "sws.h"
 
 typedef struct opts_props
 {

@@ -9,7 +9,6 @@
 #include "http.h"
 #include "server.h"
 #include "filelog.h"
-#include "sws_define.h"
 
 /* struct initial (done!) */
 void sws_header_init(st_header *header)
@@ -64,7 +63,7 @@ char* sws_get_http_status(int status_code)
 /* fetch time (done!) */
 char* sws_get_request_time()
 {
-    char* gtime = sws_malloc(25 * sizeof(char));
+    char* gtime = malloc(25 * sizeof(char));
     time_t t = time(NULL);
     struct tm *time_gmt;
     time_gmt = gmtime(&t);
@@ -74,12 +73,13 @@ char* sws_get_request_time()
 
 char* sws_get_mtime(time_t t)
 {
-    char* mtime = sws_malloc(25 * sizeof(char));
+    char* mtime = malloc(25 * sizeof(char));
     struct tm *mtime_gmt;
     mtime_gmt = gmtime(&t);
     strcpy(mtime, asctime(mtime_gmt));
     return mtime;
 }
+
 
 /* get request from client (done!)*/
 void sws_server_parseline(char* client_request_line, st_request *req)
@@ -109,161 +109,174 @@ void sws_server_parseline(char* client_request_line, st_request *req)
     if (argc_reqline > 3) req->req_code = 0;
 }
 
-void sws_http_request_handler(int fd_connection, char* client_request_line,
-                              char* client_ip_addr, st_opts_props *sop)
+int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
+                     st_request *request, st_header *header, st_log *log)
 {
+    int status_code = 500;
     struct stat st_file, st_erro;
-    char file[PATH_MAX], erro[PATH_MAX];
-    bzero(file, PATH_MAX); bzero(erro, PATH_MAX);
+    char file[PATH_MAX]; bzero(file, PATH_MAX);
+    char erro[PATH_MAX]; bzero(erro, PATH_MAX);
     strcpy(file, sop->root); strcat(file, "/");
+    strcat(file, request->req_path);
     getcwd(erro, PATH_MAX); strcat(erro, "/dir_website");
     
-    st_request *request = sws_malloc(sizeof(st_request));
-    st_header *header = sws_malloc(sizeof(st_header));
-    st_log *log = sws_malloc(sizeof(st_log));
+    if (strncmp(request->type_conn, "HTTP/1.0", 8) != 0)
+    {
+        status_code = 405;
+        strcat(erro, "/405.html");
+        lstat(erro, &st_erro);
+        header->time_last_mod = sws_get_mtime(st_erro.st_mtime);
+        header->content_length = st_erro.st_size;
+        log->req = request->req_string;
+        log->http_status = status_code;
+        log->resp_len = st_erro.st_size;
+        return status_code;
+    }
+    
+    else if (request->req_code == 0)
+    {
+        status_code = 400;
+        strcat(erro, "/400.html");
+        lstat(erro, &st_erro);
+        header->time_last_mod = sws_get_mtime(st_erro.st_mtime);
+        header->content_length = st_erro.st_size;
+        log->req = request->req_string;
+        log->http_status = status_code;
+        log->resp_len = st_erro.st_size;
+        return status_code;
+    }
+    
+    else if (lstat(file, &st_file) == ENOENT)
+    {
+        status_code = 404;
+        strcat(erro, "/404.html");
+        lstat(erro, &st_erro);
+        header->time_last_mod = sws_get_mtime(st_erro.st_mtime);
+        header->content_length = st_erro.st_size;
+        log->req = request->req_string;
+        log->http_status = status_code;
+        log->resp_len = st_erro.st_size;
+        return status_code;
+    }
+    
+    else if (S_IROTH & st_file.st_mode)
+    {
+        if (S_ISDIR(st_file.st_mode))
+        {
+            char index[PATH_MAX];
+            struct stat st_index;
+            sprintf(index, "%s/index.html", file);
+            if (lstat(index, &st_index) != ENOENT)
+            {
+                if (S_IROTH & st_index.st_mode)
+                {
+                    status_code = 200; strcpy(file, index);
+                    header->time_last_mod = sws_get_mtime(st_file.st_mtime);
+                    header->content_length = st_file.st_size;
+                    log->req = request->req_string;
+                    log->http_status = status_code;
+                    log->resp_len = st_file.st_size;
+                    return status_code;
+                }
+                else
+                {
+                    status_code = 403;
+                    strcat(erro, "/403.html");
+                    lstat(erro, &st_erro);
+                    header->time_last_mod = sws_get_mtime(st_erro.st_mtime);
+                    header->content_length = st_erro.st_size;
+                    log->req = request->req_string;
+                    log->http_status = status_code;
+                    log->resp_len = st_erro.st_size;
+                    return status_code;
+                }
+            }
+            else
+            {
+                status_code = 200;
+                header->content_type = "Directory";
+                header->time_last_mod = sws_get_mtime(st_file.st_mtime);
+                header->content_length = st_file.st_size;
+                log->req = request->req_string;
+                log->http_status = status_code;
+                log->resp_len = st_file.st_size;
+                return status_code;
+            }
+        }
+        else
+        {
+            status_code = 200;
+            header->time_last_mod = sws_get_mtime(st_file.st_mtime);
+            header->content_length = st_file.st_size;
+            log->req = request->req_string;
+            log->http_status = status_code;
+            log->resp_len = st_file.st_size;
+            return status_code;
+        }
+    }
+    else
+    {
+        status_code = 403;
+        strcat(erro, "/403.html");
+        if(lstat(erro, &st_erro) == ENOENT)
+        {   status_code = 500;  return status_code; }
+        header->time_last_mod = sws_get_mtime(st_erro.st_mtime);
+        header->content_length = st_erro.st_size;
+        log->req = request->req_string;
+        log->http_status = status_code;
+        log->resp_len = st_erro.st_size;
+        return status_code;
+    }
+}
+
+void sws_http_respond_handler(int fd_connection, char* client_request_line, char* client_ip_addr, st_opts_props *sop)
+{
+    int status_code = 500;
+    char response[MAX_BUFFER_LEN]; bzero(response, MAX_BUFFER_LEN);
+    char erro[PATH_MAX]; bzero(erro, PATH_MAX);
+    getcwd(erro, PATH_MAX); strcat(erro, "/dir_website");
+
+    st_request *request = malloc(sizeof(st_request));
+    st_header *header = malloc(sizeof(st_header));
+    st_log *log = malloc(sizeof(st_log));
     
     sws_clireq_init(request);
     sws_header_init(header);
     sws_log_init(log, client_ip_addr);
     sws_server_parseline(client_request_line, request);
+    status_code = sws_http_request_handler(client_request_line, sop, request, header, log);
     
-    strcat(file, request->req_path);
-    lstat(file, &st_file);
-    
-    /* Error 405: Method not allowed */
-    if (strncmp(request->type_conn, "HTTP/1.0", 8) != 0)
+    if (status_code != 500)
     {
-        strcat(erro, "/405.html");
-        sws_lstat(erro, &st_erro);
-        header->time_last_mod = sws_get_mtime(st_erro.st_mtime);
-        header->content_length = st_erro.st_size;
-        log->req = request->req_string;
-        log->http_status = 405;
-        log->resp_len = st_erro.st_size;
+        sprintf(response,
+                "HTTP/1.0 %s Date: %s Server: %s Last-Modified: %s Content-Type: %s Content-Length: %lld\r\n\r\n",
+                sws_get_http_status(log->http_status), header->time_now, header->server_name,
+                header->time_last_mod, header->content_type, header->content_length);
+        while(write(fd_connection, response, MAX_BUFFER_LEN) < 0);
+        filelog_record(sop, log, erro);
     }
-    
-    /* Error 400: Bad Request */
-    else if (request->req_code == 0)
-    {
-        strcat(erro, "/400.html");
-        sws_lstat(erro, &st_erro);
-        header->time_last_mod = sws_get_mtime(st_erro.st_mtime);
-        header->content_length = st_erro.st_size;
-        log->req = request->req_string;
-        log->http_status = 400;
-        log->resp_len = st_erro.st_size;
-    }
-    
-    /* Error 404: Not Found */
-    else if (access(file, F_OK) == -1)
-    {
-        strcat(erro, "/404.html");
-        sws_lstat(erro, &st_erro);
-        header->time_last_mod = sws_get_mtime(st_erro.st_mtime);
-        header->content_length = st_erro.st_size;
-        log->req = request->req_string;
-        log->http_status = 404;
-        log->resp_len = st_erro.st_size;
-    }
-    
-    /* Target is accessible */
-    else if (S_IROTH & st_file.st_mode)
-    {
-        /* Target is accessible folder ... */
-        if (S_ISDIR(st_file.st_mode))
-        {
-            char index_html[PATH_MAX];
-            sprintf(index_html, "%s/index.html", file);
-            
-            /* ... with index.html exist ... */
-            if (access(index_html, F_OK) == 0)
-            {
-                struct stat st_index;
-                sws_lstat(index_html, &st_index);
-                
-                /* ... and accessble */
-                if (S_IROTH & st_index.st_mode)
-                {
-                    strcpy(file, index_html);
-                    sws_lstat(file, &st_file);
-                    header->time_last_mod = sws_get_mtime(st_file.st_mtime);
-                    header->content_length = st_file.st_size;
-                    log->req = request->req_string;
-                    log->http_status = 200;
-                    log->resp_len = st_file.st_size;
-                }
-                
-                /* ... or not accessble */
-                else
-                {
-                    strcat(erro, "/403.html");
-                    sws_lstat(erro, &st_erro);
-                    header->time_last_mod = sws_get_mtime(st_erro.st_mtime);
-                    header->content_length = st_erro.st_size;
-                    log->req = request->req_string;
-                    log->http_status = 403;
-                    log->resp_len = st_erro.st_size;
-                }
-            }
-            
-            /* ... or index.html not exist */
-            else
-            {
-                header->time_last_mod = sws_get_mtime(st_file.st_mtime);
-                header->content_length = st_file.st_size;
-                log->req = request->req_string;
-                log->http_status = 200;
-                log->resp_len = st_file.st_size;
-            }
-        }
-        
-        /* Target is file ... */
-        else
-        {
-            if ((S_IROTH & st_file.st_mode))
-            {
-                header->time_last_mod = sws_get_mtime(st_file.st_mtime);
-                header->content_length = st_file.st_size;
-                log->req = request->req_string;
-                log->http_status = 200;
-                log->resp_len = st_file.st_size;
-            }
-            else
-            {
-                strcat(erro, "/403.html");
-                sws_lstat(erro, &st_erro);
-                header->time_last_mod = sws_get_mtime(st_erro.st_mtime);
-                header->content_length = st_erro.st_size;
-                log->req = request->req_string;
-                log->http_status = 403;
-                log->resp_len = st_erro.st_size;
-            }
-            
-        }
-    }
-    
-    /* Target is not accessible */
     else
     {
-        strcat(erro, "/403.html");
-        sws_lstat(erro, &st_erro);
-        header->time_last_mod = sws_get_mtime(st_erro.st_mtime);
-        header->content_length = st_erro.st_size;
-        log->req = request->req_string;
-        log->http_status = 403;
-        log->resp_len = st_erro.st_size;
+        struct stat st_err;
+        char sws_err[PATH_MAX]; bzero(sws_err, PATH_MAX);
+        getcwd(sws_err, PATH_MAX); strcat(sws_err, "/dir_website/500.html");
+        lstat(sws_err, &st_err);
+        log->ip_addr = client_ip_addr;
+        log->time = sws_get_request_time();
+        log->req = client_request_line;
+        log->http_status = 500;
+        log->resp_len = st_err.st_size;
+        sprintf(response,
+                "HTTP/1.0 %s \r\n\
+                Date: %s \r\n\
+                Server: SWS/1.0 \r\n\
+                Last-Modified: %s \r\n\
+                Content-Type: text/html \r\n\
+                Content-Length: %lld\r\n\r\n",
+                sws_get_http_status(log->http_status), log->time,
+                sws_get_mtime(st_err.st_mtime), st_err.st_size);
+        while(write(fd_connection, response, MAX_BUFFER_LEN) < 0);
+        filelog_record(sop, log, erro);
     }
-    
-    char response[MAX_BUFFER_LEN];
-    bzero(response, MAX_BUFFER_LEN);
-    sprintf(response,
-            "HTTP/1.0 %sDate: %sServer: %sLast-Modified: %sContent-Type: %sContent-Length: %lld\r\n\r\n",
-            sws_get_http_status(log->http_status), header->time_now, header->server_name,
-            header->time_last_mod, header->content_type, header->content_length);
-    
-    sws_write(fd_connection, response, MAX_BUFFER_LEN);
-    
-    filelog_record(sop, log);
     free(request); free(header); free(log);
 }
-

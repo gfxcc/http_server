@@ -11,9 +11,8 @@
 
 #include "http.h"
 #include "server.h"
-#include "sws_define.h"
 
-int filelog_init(st_opts_props *sop);
-void filelog_record(st_opts_props *sop, st_log *log);
+int filelog_init(st_opts_props *sop, char* erro);
+void filelog_record(st_opts_props *sop, st_log *log, char* erro);
 
 #endif /* filelog_h */
