@@ -3,7 +3,7 @@
 //  sws
 //
 //  Created by Chen Wei on 11/13/15.
-//  Copyright © 2015 Chen Wei. All rights reserved.
+//  Copyright (C) 2015 Chen Wei. All rights reserved.
 //
 
 #include "sws.h"
@@ -13,8 +13,7 @@
 void usage();
 
 int main(int argc, char *argv[]) {
-    // insert code here...
-    
+
     /* initialization */
     st_opts_props server_props;
     init_opts_props(&server_props);
@@ -37,7 +36,9 @@ int main(int argc, char *argv[]) {
                 
             // usage options
             case 'h':
-                usage(); break;
+                usage(); 
+                exit(EXIT_FAILURE);
+				break;
                 
             // specify server ip address options
             case 'i':
@@ -96,6 +97,6 @@ void usage()
     printf(" NAME:                                                   \n");
     printf("    sws --- a simple web server                          \n");
     printf(" SYNOPSIS:                                               \n");
-    printf("    sws [−dh] [−c dir] [−i addr] [−l file] [−p port] dir \n");
+    printf("    sws [-dh] [-c dir] [-i addr] [-l file] [-p port] dir \n");
     printf("/-------------------------------------------------------/\n");
 }

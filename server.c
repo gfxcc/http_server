@@ -3,7 +3,7 @@
 //  sws
 //
 //  Created by Chen Wei on 11/14/15.
-//  Copyright © 2015 Chen Wei. All rights reserved.
+//  Copyright (C) 2015 Chen Wei. All rights reserved.
 //
 
 #include "http.h"
@@ -78,7 +78,7 @@ void server_exec(st_opts_props *sop)
             
             while (sws_read(fd_connection, client_request, MAX_BUFFER_LEN) > 0)
             {
-                sws_http_request_handler(fd_connection, client_request, client_ip_addr, sop);
+                sws_http_respond_handler(fd_connection, client_request, client_ip_addr, sop);
                 bzero(client_request, MAX_BUFFER_LEN);
                 break;
             }
@@ -105,7 +105,7 @@ void server_exec(st_opts_props *sop)
                 {
                     if (strlen(client_request) > 1)
                     {
-                        sws_http_request_handler(fd_connection,
+                        sws_http_respond_handler(fd_connection,
                             client_request, client_ip_addr, sop);
                         break;
                     }

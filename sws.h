@@ -3,7 +3,7 @@
 //  sws
 //
 //  Created by Chen Wei on 11/13/15.
-//  Copyright © 2015 Chen Wei. All rights reserved.
+//  Copyright (C) 2015 Chen Wei. All rights reserved.
 //
 
 #ifndef sws_h
@@ -27,6 +27,7 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <semaphore.h>
+#include <time.h>
 
 #define MAX_BACK_LOG        1024
 #define MAX_CONTENT_LEN     8192

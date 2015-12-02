@@ -3,7 +3,7 @@
 //  sws
 //
 //  Created by Chen Wei on 11/15/15.
-//  Copyright © 2015 Chen Wei. All rights reserved.
+//  Copyright (C) 2015 Chen Wei. All rights reserved.
 //
 
 #include "sws.h"
@@ -31,7 +31,7 @@ void filelog_record(st_opts_props *sop, st_log *log, char* erro)
     int fd_log = filelog_init(sop, erro);
     if(fd_log != -1)
     {
-        flock(fd_log, LOCK_EX);
+        /* flock(fd_log, LOCK_EX); */
         char logline[MAX_BUFFER_LEN]; bzero(logline, MAX_BUFFER_LEN);
         
         sprintf(logline, "IP:%s\tTIME: GMT %sRequestLine: %sHTTP Status Code: %d\tLength: %lu\n\n",
@@ -39,7 +39,7 @@ void filelog_record(st_opts_props *sop, st_log *log, char* erro)
         
         while(write(fd_log, logline, strlen(logline)) < 0);
         
-        flock(fd_log, LOCK_UN);
+        /* flock(fd_log, LOCK_UN); */
         close(fd_log);
         
         if (sop->debug_mode)

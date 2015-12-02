@@ -3,7 +3,7 @@
 //  sws
 //
 //  Created by Chen Wei on 11/13/15.
-//  Copyright © 2015 Chen Wei. All rights reserved.
+//  Copyright (C) 2015 Chen Wei. All rights reserved.
 //
 
 #ifndef redefine_h

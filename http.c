@@ -3,7 +3,7 @@
 //  sws
 //
 //  Created by Chen Wei on 11/14/15.
-//  Copyright © 2015 Chen Wei. All rights reserved.
+//  Copyright (C) 2015 Chen Wei. All rights reserved.
 //
 
 #include "http.h"
@@ -249,7 +249,7 @@ void sws_http_respond_handler(int fd_connection, char* client_request_line, char
     if (status_code != 500)
     {
         sprintf(response,
-                "HTTP/1.0 %s Date: %s Server: %s Last-Modified: %s Content-Type: %s Content-Length: %lld\r\n\r\n",
+                "HTTP/1.0 %s Date: %s Server: %s Last-Modified: %s Content-Type: %s Content-Length: %zu\r\n\r\n",
                 sws_get_http_status(log->http_status), header->time_now, header->server_name,
                 header->time_last_mod, header->content_type, header->content_length);
         while(write(fd_connection, response, MAX_BUFFER_LEN) < 0);
@@ -272,7 +272,7 @@ void sws_http_respond_handler(int fd_connection, char* client_request_line, char
                 Server: SWS/1.0 \r\n\
                 Last-Modified: %s \r\n\
                 Content-Type: text/html \r\n\
-                Content-Length: %lld\r\n\r\n",
+                Content-Length: %zu\r\n\r\n",
                 sws_get_http_status(log->http_status), log->time,
                 sws_get_mtime(st_err.st_mtime), st_err.st_size);
         while(write(fd_connection, response, MAX_BUFFER_LEN) < 0);
