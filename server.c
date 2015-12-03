@@ -13,6 +13,7 @@
 
 void init_opts_props(st_opts_props *sop)
 {
+    sop->debug_mode=0;
     sop->cgi_dir = NULL;
     sop->ip_address = NULL;
     sop->file_log = NULL;
@@ -72,21 +73,42 @@ void server_exec(st_opts_props *sop)
             printf("Debug Mode Enabled \n");
             // fetch ip address of new client
             char client_ip_addr[INET6_ADDRSTRLEN], client_request[MAX_BUFFER_LEN];
-            sws_getnameinfo((struct sockaddr*)&ss_client, sizeof(ss_client),
-                            client_ip_addr, INET6_ADDRSTRLEN, 0, 0, NI_NUMERICHOST);
-            printf("[Client] %s connected \n", client_ip_addr);
-            
-            while (sws_read(fd_connection, client_request, MAX_BUFFER_LEN) > 0)
-            {
-                sws_http_respond_handler(fd_connection, client_request, client_ip_addr, sop);
-                bzero(client_request, MAX_BUFFER_LEN);
-                break;
-            }
-            
-            //sws_http_request_handler(fd_connection, client_ip_addr, sop);
-            close(fd_connection);
-            printf("[Client] %s diconnected \n", client_ip_addr);
-            exit(EXIT_SUCCESS);
+                sws_getnameinfo((struct sockaddr*)&ss_client, sizeof(ss_client),
+                                client_ip_addr, INET6_ADDRSTRLEN, 0, 0, NI_NUMERICHOST);
+                printf("[Client] %s connected \n", client_ip_addr);
+                char content[MAX_BUFFER_LEN];
+                char *enter = "\r\n";
+                while (sws_read(fd_connection, client_request, MAX_BUFFER_LEN) > 0)
+                {
+                    if (strlen(client_request) > 0)
+                    {
+                        if(strlen(client_request)+strlen(content) <PATH_MAX)
+                        {
+                            strcat(content,client_request);
+                            if(strcmp(enter,client_request)==0)
+                            {
+                                sws_http_respond_handler(fd_connection, content, client_ip_addr, sop);
+                                bzero(content,MAX_BUFFER_LEN);
+                                break;
+                            }
+                        }
+                        else{
+                            //call http 500
+
+                        }
+                    }
+                    else{
+                        // call http 500
+                        
+                    }
+
+                    bzero(client_request, MAX_BUFFER_LEN);
+                }
+                
+                //sws_http_request_handler(fd_connection, client_ip_addr, sop);
+                close(fd_connection);
+                printf("[Client] %s diconnected \n", client_ip_addr);
+                exit(EXIT_SUCCESS);
         }
         else    // fork child process for each new accepted client
         {
@@ -94,24 +116,38 @@ void server_exec(st_opts_props *sop)
             // if child process
             if (pid == 0)
             {
-                // close socket of father first
-                close(fd_socket);
                 char client_ip_addr[INET6_ADDRSTRLEN], client_request[MAX_BUFFER_LEN];
                 sws_getnameinfo((struct sockaddr*)&ss_client, sizeof(ss_client),
                                 client_ip_addr, INET6_ADDRSTRLEN, 0, 0, NI_NUMERICHOST);
                 printf("[Client] %s connected \n", client_ip_addr);
-                
+                char content[MAX_BUFFER_LEN];
+                char *enter = "\r\n";
                 while (sws_read(fd_connection, client_request, MAX_BUFFER_LEN) > 0)
                 {
-                    if (strlen(client_request) > 1)
+                    if (strlen(client_request) > 0)
                     {
-                        sws_http_respond_handler(fd_connection,
-                            client_request, client_ip_addr, sop);
-                        break;
+                        if(strlen(client_request)+strlen(content) <PATH_MAX)
+                        {
+                            strcat(content,client_request);
+                            if(strcmp(enter,client_request)==0)
+                            {
+                                sws_http_respond_handler(fd_connection, content, client_ip_addr, sop);
+                                bzero(content,MAX_BUFFER_LEN);
+                                break;
+                            }
+                        }
+                        else{
+                            //call http 500
+
+                        }
                     }
+                    else{
+                        // call http 500
+
+                    }
+
                     bzero(client_request, MAX_BUFFER_LEN);
                 }
-                
                 //sws_http_request_handler(fd_connection, client_ip_addr, sop);
                 close(fd_connection);
                 printf("[Client] %s diconnected \n", client_ip_addr);
@@ -124,3 +160,4 @@ void server_exec(st_opts_props *sop)
         }
     }
 }
+

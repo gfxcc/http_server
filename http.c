@@ -14,7 +14,7 @@
 void sws_header_init(st_header *header)
 {
     header->time_now = sws_get_request_time();
-    header->server_name = "SWS/0.1 \r\n";
+    header->server_name = "SWS/1.0 \r\n";
     header->time_last_mod = NULL;
     header->content_type = "text/html\r\n";
     header->content_length = 0;
@@ -84,29 +84,55 @@ char* sws_get_mtime(time_t t)
 /* get request from client (done!)*/
 void sws_server_parseline(char* client_request_line, st_request *req)
 {
-    char line[PATH_MAX]; strcpy(line, client_request_line);
-    char req_type[4], req_path[PATH_MAX], type_conn[PATH_MAX];
-    char *token, *save;
-    int argc_reqline = 0;
-    token = strtok_r(line, " ", &save);
-    while (token != NULL)
+    char *token,*str1,*str2;
+    char *save, *modified_time;
+    char req_type[4];
+    int i=0;
+    token = strtok_r(client_request_line, "\r\n", &str1);
+    while(token != NULL){
+        if(i==0){
+            save = token;
+        }
+        else{
+            if(strncasecmp(token,"if-modified-since",strlen("if-modified-since")) == 0){
+                str2 = token;
+                strtok_r(str2,":",&modified_time);
+            }
+        }
+        token = strtok_r(NULL,"\r\n",&str1);
+        i++;
+    }
+    char *token2;
+    int j = 0;
+    token2 = strtok_r(NULL, " ", &save);
+    while (token2 != NULL)
     {
-        if (argc_reqline == 0) strcpy(req_type, token);
-        else if (argc_reqline == 1) strcpy(req_path, token);
-        else if (argc_reqline == 2) strcpy(type_conn, token);
-        token = strtok_r(NULL, " ", &save);
-        argc_reqline += 1;
+        if (j == 0){
+            strcpy(req_type, token2);
+        }
+        else if (j == 1){
+            req->req_path = malloc(strlen(token2));
+            strcpy(req->req_path, token2);
+        }
+        else if (j == 2){ 
+            req->type_conn = malloc(strlen(token2));
+            strcpy(req->type_conn, token2);
+        }
+        token2 = strtok_r(NULL, " ", &save);
+        j++;
     }
     req->req_string = client_request_line;
-    if (strncmp(req_type, "GET", 3) == 0 && argc_reqline > 0)
-    {   req->req_code = 1;  req->req_type = "GET";  }
-    else if (strncmp(req_type, "HEAD", 4) == 0 && argc_reqline > 0)
-    {   req->req_code = 2;  req->req_type = "HEAD"; }
+    if (strncmp(req_type, "GET", 3) == 0 && i > 0){   
+        req->req_code = 1;  req->req_type = "GET";  
+    }
+    else if (strncmp(req_type, "HEAD", 4) == 0 && i > 0){   
+        req->req_code = 2;  req->req_type = "HEAD"; 
+    }
     else
-    {   req->req_type = req_type;   }
-    if (argc_reqline > 1) req->req_path = req_path;
-    if (argc_reqline > 2) req->type_conn = type_conn;
-    if (argc_reqline > 3) req->req_code = 0;
+    {  
+        req->req_type = req_type;
+        req->req_code = 0;
+    }
 }
 
 int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
@@ -280,3 +306,4 @@ void sws_http_respond_handler(int fd_connection, char* client_request_line, char
     }
     free(request); free(header); free(log);
 }
+

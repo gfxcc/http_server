@@ -1,2 +1,51 @@
-jwang75 can write.
-ycao18 can write.
+The whole program flow chart:
+		sws
+		||
+		||
+		\/
+		server
+		||
+		||
+		\/
+			 <===> cgi    
+request	 ===>	http	 ====> filelog
+response<===		 <===> magic
+
+sws: 		handles the options
+server: 	set up the server
+http: 		parse request and send response back
+cgi: 		get request from http and return results back to http
+filelog:	write logs
+sws_define: all methods that will be used by most c files.
+magic: 		content-type is determined via magic(5).
+
+/---------------------------------------------------------------------------/
+
+Request Type		Response Type
+1. file 			file
+2. directory		directory's index.html or file list
+3. cgi-dir			cgi results
+
+Directory Hints
+1. If dir doesn't contain index.html, return file list
+2. If dir begin with "~", first slash is translated into that user's sws directory
+
+/---------------------------------------------------------------------------/
+
+Http version
+Http 1.0
+
+/---------------------------------------------------------------------------/
+
+Response Code:
+200 	OK
+304		Not Modified
+400		Bad Request
+403		Forbidden
+404		Not Found
+500		Internal Server Error
+501		Not Implemented
+
+/---------------------------------------------------------------------------/
+
+
