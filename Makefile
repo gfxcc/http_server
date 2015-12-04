@@ -6,14 +6,16 @@ DEPS = filelog.h \
 	   http.h \
 	   server.h \
 	   sws.h \
-	   sws_define.h
+	   sws_define.h \
+	   cgi.h
 
 INCS = -I ./
 
 OBJS = filelog.o \
 	   http.o \
 	   server.o \
-	   sws_define.o
+	   sws_define.o \
+	   cgi.o
 
 default: build
 
@@ -42,4 +44,7 @@ server.o: server.c $(DEPS)
 
 sws_define.o: sws_define.c $(DEPS)
 	$(CC) -c $(CFLAGS) $(INCS) -o sws_define.o sws_define.c
+
+cgi.o: cgi.c $(DEPS)
+	$(CC) -c $(CFLAGS) $(INCS) -o cgi.o cgi.c
 
