@@ -146,8 +146,15 @@ void sws_server_parseline(char* client_request_line, st_request *req)
         token2 = strtok_r(NULL, " ", &save);
         j++;
     }
+
     req->req_string = client_request_line;
-    if (strncmp(req_type, "GET", 3) == 0 && i > 0){
+    /* judge head legal */
+    if (j != 3)
+    {
+        req->req_code = -1;
+        req->req_path = NULL;
+    }
+    else if (strncmp(req_type, "GET", 3) == 0 && i > 0){
         req->req_code = 1;  req->req_type = "GET";
     }
     else if (strncmp(req_type, "HEAD", 4) == 0 && i > 0){
@@ -170,11 +177,14 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
     bzero(erro, PATH_MAX);
     strcpy(file, sop->root);
     strcat(file, "/");
-    strcat(file, request->req_path);
-    strcpy(request->req_path,file);
     getcwd(erro, PATH_MAX);
     strcat(erro, "/response_msg/");
-    if (request->type_conn == NULL )
+    if (request->req_path)
+    {
+        strcat(file, request->req_path);
+        strcpy(request->req_path,file);
+    }
+    if (request->type_conn == NULL || request->req_code == -1)
     {
         status_code = 400;
         strcat(erro, "/400.html");
