@@ -1,3 +1,6 @@
 12/02
 1.parse request function can only parse one line, and do not support if-modified-since.(fixed)
 2.All dir request get 403 forbidden.(fixed)
+
+12/03
+3.nc cannot get response (fixed).
