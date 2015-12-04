@@ -11,44 +11,6 @@
 #include "server.h"
 
 void usage();
-void root_parse(char* arg, st_opts_props* sop);
-
-void root_parse(char* arg, st_opts_props* sop)
-{
-    printf("%s\n", arg);
-    char root[PATH_MAX];
-    char path[PATH_MAX]; strcpy(path, arg);
-    int path_len = (int)strlen(path);
-    if (path[0] != '\"' || path[path_len - 1] != '\"' || path_len < 3)
-    {
-	printf("%c, %c\n", path[0], path[path_len - 1]);
-        fprintf(stderr, "Please pass the dir within quotes\n");
-        exit(EXIT_FAILURE);
-    }
-    if ((path[1] == '~' && path_len == 3) || (path[1] == '~' && path[2] == '/'))
-    {
-        strcpy(root, getenv("HOME"));
-        strncat(root, "/sws/", 5);
-        if (path_len > 4){
-            for (int i = 3; i < path_len - 1; i++)
-            {   strncpy(root, &path[i], 1);  }
-        }
-    }
-    else
-    {
-        for (int i = 1; i < path_len - 1; i++)
-        {   strncpy(root, &path[i], 1); }
-    }
-    strncpy(root, "\0", 1);
-    struct stat st_root;
-    int rc = lstat(root, &st_root);
-    if (rc == 0 && S_ISDIR(st_root.st_mode))
-    {   sop->root = root;   }
-    else{
-        fprintf(stderr, "Dir %s is not exist\n", root);
-        exit(EXIT_FAILURE);
-    }
-}
 
 int main(int argc, char *argv[]) {
 
@@ -74,8 +36,9 @@ int main(int argc, char *argv[]) {
                 
             // usage options
             case 'h':
-                usage(); exit(EXIT_FAILURE);
-		break;
+                usage(); 
+                exit(EXIT_FAILURE);
+				break;
                 
             // specify server ip address options
             case 'i':
@@ -108,9 +71,16 @@ int main(int argc, char *argv[]) {
     }
     //argc -= optind;
     //argv += optind;
-
-    root_parse(argv[optind], &server_props);
- 
+    
+    server_props.root = argv[optind];
+    struct stat st_root;
+    lstat(server_props.root, &st_root);
+    if(!S_ISDIR(st_root.st_mode))
+    {
+        fprintf(stderr, "%s is not a directory\n", server_props.root);
+        return EXIT_FAILURE;
+    }
+    
     /* Daemonize if -d not set */
     /*
     if (!server_props.debug_mode)
@@ -130,3 +100,4 @@ void usage()
     printf("    sws [-dh] [-c dir] [-i addr] [-l file] [-p port] dir \n");
     printf("/-------------------------------------------------------/\n");
 }
+

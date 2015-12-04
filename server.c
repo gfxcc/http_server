@@ -39,7 +39,7 @@ void server_exec(st_opts_props *sop)
     const int on = 1;
     struct addrinfo hints, *res = NULL;
     struct sockaddr_storage ss_client;
-    
+
     // hints is an addrinfo structure points that record
     // properties of the given socket address
     memset(&hints, 0, sizeof (hints));
@@ -47,19 +47,19 @@ void server_exec(st_opts_props *sop)
     hints.ai_protocol = IPPROTO_TCP;    //using TCP protocol
     hints.ai_socktype = SOCK_STREAM;    //specifies socktype as sock_stream
     hints.ai_flags = AI_PASSIVE;        //passive for bind of server socket
-    
+
     // as a substitution of gethostbyname, getaddrinfo supports IPv6
     // given socket address structure returns by list point res
     sws_getaddrinfo(sop->ip_address, sop->port, &hints, &res);
     fd_socket = sws_socket(res->ai_family, res->ai_socktype, res->ai_protocol);
     sws_setsockopt(fd_socket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
     sws_bind(fd_socket, res->ai_addr, res->ai_addrlen);
-    
+
     if (!sop->debug_mode)
         sws_listen(fd_socket, MAX_BACK_LOG);
     else
         sws_listen(fd_socket, 1);
-    
+
     //free res to prevent a memory leak
     freeaddrinfo(res);
     while(1)
@@ -99,12 +99,12 @@ void server_exec(st_opts_props *sop)
                     }
                     else{
                         // call http 500
-                        
+
                     }
 
                     bzero(client_request, MAX_BUFFER_LEN);
                 }
-                
+
                 //sws_http_request_handler(fd_connection, client_ip_addr, sop);
                 close(fd_connection);
                 printf("[Client] %s diconnected \n", client_ip_addr);
