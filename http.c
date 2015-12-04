@@ -7,13 +7,13 @@
  */
 
 /*  When server receives a request from client, it calls http_respond_handler
- *  so respond. In this method it uses server_parseline method to 
- *  parse request line and save request type, uri, protocol in header. Then 
- *  calls get_http_status to accquire status code according to header. With 
+ *  so respond. In this method it uses server_parseline method to
+ *  parse request line and save request type, uri, protocol in header. Then
+ *  calls get_http_status to accquire status code according to header. With
  *  status code and request type, server will send header information and file
  *  content optionally.
  */
- 
+
 
 #include "http.h"
 #include "server.h"
@@ -59,19 +59,19 @@ char* sws_get_http_status(int status_code)
             http_status = "200 OK\r\n";
             break;
         case 304:
-            http_status = "304 Not Modified\r\n"; 
+            http_status = "304 Not Modified\r\n";
             break;
         case 400:
-            http_status = "400 Bad Request\r\n"; 
+            http_status = "400 Bad Request\r\n";
             break;
         case 403:
-            http_status = "403 Forbidden\r\n"; 
+            http_status = "403 Forbidden\r\n";
             break;
         case 404:
-            http_status = "404 Not Found\r\n"; 
+            http_status = "404 Not Found\r\n";
             break;
         case 500:
-            http_status = "500 Internal Server Error\r\n"; 
+            http_status = "500 Internal Server Error\r\n";
             break;
         case 501:
             http_status = "501 Not implemented\r\n";
@@ -115,7 +115,7 @@ void sws_server_parseline(char* client_request_line, st_request *req)
     {
         if(i == 0)
         {
-           save = token;   
+           save = token;
         }
         else
        {
@@ -139,7 +139,7 @@ void sws_server_parseline(char* client_request_line, st_request *req)
             req->req_path = malloc(strlen(token2));
             strcpy(req->req_path, token2);
         }
-        else if (j == 2){ 
+        else if (j == 2){
             req->type_conn = malloc(strlen(token2));
             strcpy(req->type_conn, token2);
         }
@@ -147,13 +147,13 @@ void sws_server_parseline(char* client_request_line, st_request *req)
         j++;
     }
     req->req_string = client_request_line;
-    if (strncmp(req_type, "GET", 3) == 0 && i > 0){   
-        req->req_code = 1;  req->req_type = "GET";  
+    if (strncmp(req_type, "GET", 3) == 0 && i > 0){
+        req->req_code = 1;  req->req_type = "GET";
     }
-    else if (strncmp(req_type, "HEAD", 4) == 0 && i > 0){   
-        req->req_code = 2;  req->req_type = "HEAD"; 
+    else if (strncmp(req_type, "HEAD", 4) == 0 && i > 0){
+        req->req_code = 2;  req->req_type = "HEAD";
     }
-    else{  
+    else{
         req->req_type = req_type;
         req->req_code = 0;
     }
@@ -164,15 +164,15 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
 {
     int status_code = 500;
     struct stat st_file, st_erro;
-    char file[PATH_MAX]; 
+    char file[PATH_MAX];
     bzero(file, PATH_MAX);
-    char erro[PATH_MAX]; 
+    char erro[PATH_MAX];
     bzero(erro, PATH_MAX);
-    strcpy(file, sop->root); 
+    strcpy(file, sop->root);
     strcat(file, "/");
     strcat(file, request->req_path);
     strcpy(request->req_path,file);
-    getcwd(erro, PATH_MAX); 
+    getcwd(erro, PATH_MAX);
     strcat(erro, "/response_msg/");
     if (request->type_conn == NULL )
     {
@@ -195,7 +195,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
         lstat(erro, &st_erro);
         sws_http_status_msg(request,st_erro,status_code,header,log);
     }
-    
+
     else{
         /* if file or dir doesnt exists*/
         if (stat(file, &st_file) == -1){
@@ -244,8 +244,9 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                     else
                     {   /* index.html */
                         if(S_IROTH & st_index.st_mode){
-                            status_code = 200; 
+                            status_code = 200;
                             *type = 1;
+                            sprintf(request->req_path, "%s", index);
                         }
                         else{
                             status_code = 403;
@@ -320,11 +321,13 @@ void sws_http_respond_handler(int fd_connection, char* client_request_line, char
         sws_http_status_msg(request,st_erro,status_code,header,log);
     }
 
-   
+
 
     /* if status code ==  200 return content */
+    printf("type = %i\n", type);
     if(status_code == 200){
         char *content = sws_getContent(request->req_path,type);
+        printf("path: %s\ncontent = %s\n",request->req_path, content);
         sprintf(response,
                 "HTTP/1.0 %sDate: %sServer: %sLast-Modified: %sContent-Type: %sContent-Length: %zu\r\n\r\n",
                 sws_get_http_status(status_code), header->time_now, header->server_name,
