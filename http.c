@@ -206,7 +206,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
         lstat(erro, &st_erro);
         sws_http_status_msg(request,st_erro,status_code,header,log);
     }
-    
+
 
     else{
         /* if file or dir doesnt exists*/
@@ -238,7 +238,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                     {
                         /* no index.html, return directory */
                         if (errno == ENOENT)
-                        {   
+                        {
 
                             if(header->time_last_mod && parse_time(header->time_last_mod,&last_mod)&&
                                  last_mod>=st_file.st_mtime){
@@ -292,14 +292,14 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                 }
                 else{
                     /* file */
-                    
+
                     if(header->time_last_mod && parse_time(header->time_last_mod,&last_mod)&&
                        last_mod>=st_file.st_mtime){
                           status_code = 304;
                           strcat(erro,"/304.html");
                           lstat(erro,&st_erro);
                           sws_http_status_msg(request,st_erro,status_code,header,log);
-                    } 
+                    }
                     else
                     {
                     status_code = 200;
@@ -382,17 +382,17 @@ void sws_http_respond_handler(int fd_connection, char* client_request_line, char
         sws_http_status_msg(request,st_erro,status_code,header,log);
     }
 
-    
+
 
 
     /* if status code ==  200 return content */
     if(status_code == 200){
-        
+
         char *content = sws_getContent(request->req_path,type);
         sprintf(response,
                 "HTTP/1.0 %sDate: %sServer: %sLast-Modified: %sContent-Type: %sContent-Length: %zu\r\n\r\n",
                 sws_get_http_status(status_code), header->time_now, header->server_name,
-                header->time_last_mod, header->content_type, header->content_length);
+                header->time_last_mod, header->content_type, strlen(content));
         if(strcmp(request->req_type,"GET")==0)
             sprintf(response,"%s%s\r\n",response,content);
 
