@@ -320,7 +320,23 @@ void sws_http_respond_handler(int fd_connection, char* client_request_line, char
     /* 500 error from server.c */
     if(!error_500){
         sws_server_parseline(client_request_line, request);
-        status_code = sws_http_request_handler(client_request_line, sop, request, header, log, &type);
+        // judege CGI
+        if (request->req_code == 1 && sop->cgi_dir != NULL && strncpy(request->req_path, "/cgi-bin", 8) == 0)
+        {
+            /*
+             *
+             *
+             *
+             * */
+            printf("in CGI\n");
+            //status_code = 0;
+            if (status_code == 200)
+                return;
+        }
+        else
+        {
+            status_code = sws_http_request_handler(client_request_line, sop, request, header, log, &type);
+        }
     }
     else{
         char error[PATH_MAX];
