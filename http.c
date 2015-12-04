@@ -324,10 +324,8 @@ void sws_http_respond_handler(int fd_connection, char* client_request_line, char
 
 
     /* if status code ==  200 return content */
-    printf("type = %i\n", type);
     if(status_code == 200){
         char *content = sws_getContent(request->req_path,type);
-        printf("path: %s\ncontent = %s\n",request->req_path, content);
         sprintf(response,
                 "HTTP/1.0 %sDate: %sServer: %sLast-Modified: %sContent-Type: %sContent-Length: %zu\r\n\r\n",
                 sws_get_http_status(status_code), header->time_now, header->server_name,
