@@ -9,3 +9,4 @@
 
 12/04
 6.request directory, return index.html fail. (fixed)
+7.debug mode bug fix, file log buf fix (fixed)
