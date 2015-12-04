@@ -225,7 +225,12 @@ char* sws_getContent(char* path, int file)
         DIR* dir;
         dir = opendir(path);
         struct dirent* entry;
-        while(entry = readdir(dir)) {
+        while(1) {
+            entry = readdir(dir);
+            if (NULL == entry)
+            {
+                break;
+            }
             if (entry->d_name[0] == '.')
                 continue;
             strcat(content, entry->d_name);
