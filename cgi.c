@@ -11,20 +11,29 @@ static int sws_cgi_check_script(char *cgi_root, char *script_path, size_t script
 static void sws_cgi_path_combine(char *path1, size_t size1, char *path2, size_t size2, char *buf);
 
 /* refer to APUE figure 15.6 */
-void 
-sws_cgi_resquest_handler(int fd_conn, st_request *request, st_opts_props *sop, char *client_ip_addr)
+int
+sws_cgi_request_handler(int fd_conn, st_request *request, st_opts_props *sop, char *client_ip_addr)
 {
 	sws_request_meta_variables_t	request_meta_vars;
 	int								fd[2];
 	pid_t							pid;
 	char							line[MAX_LINE];
-	int								nread;
+	int								nread, n;
+	const char						*exec_err = "EXEC ERROR";
+	size_t							exec_err_len;
+	int								read_time;
+	char							response_buf[MAX_LINE];
+	char							gtime[50];
+	time_t							t;
+	struct tm						*time_gmt;
+
+	exec_err_len = strlen(exec_err);
+	read_time = 0;
 
 	sws_cgi_parse_meta_vars(request, sop, client_ip_addr, &request_meta_vars);
 
-	/* TODO: return 404 */
 	if (request_meta_vars.script_filename == NULL) {
-		printf("No Script\n");
+		return 404;
 	}
 
 	/* set env vars */
@@ -32,20 +41,38 @@ sws_cgi_resquest_handler(int fd_conn, st_request *request, st_opts_props *sop, c
 
 	/* fork a new process to run cgi script, using pipe for communication */
 	if (pipe(fd) < 0) {
-		/* TODO: 500 */
+		return 500;
 	}
 
 	if ((pid = fork()) < 0) {
-		/* TODO: 500 */
+		return 500;
 	}
 	else if (pid > 0) { /* parent */
 		close(fd[1]);
-		
-		while ((nread = read(fd[0], line, MAX_LINE)) > 0) {
-			write(STDOUT_FILENO, line, nread);
-		}
-		exit(0);
 
+		while ((nread = read(fd[0], line, MAX_LINE)) > 0) {
+			++read_time;
+			if (read_time == 1) {
+				/* exec cgi script failure */
+				if (strncmp(line, exec_err, exec_err_len) == 0) {
+					return 500;
+				}
+				/* write response line the several headers */
+				t = time(NULL);
+				time_gmt = gmtime(&t);
+				strftime(gtime, 50, "%a, %d %b %Y %T GMT", time_gmt);
+
+				n = sprintf(response_buf, "HTTP/1.0 200 OK\r\nDate: %s\r\nServer: %s\r\n", gtime, request_meta_vars.server_software);
+				if (n < 0) {
+					return 500;
+				}
+				write(fd_conn, response_buf, n);
+			}
+			write(fd_conn, line, nread);
+		}
+
+		/* avoid zombie child process */
+		waitpid(pid, NULL, 0);
 	}
 	else {				/* child */
 		/* connent standard output to pipes */ 
@@ -56,11 +83,11 @@ sws_cgi_resquest_handler(int fd_conn, st_request *request, st_opts_props *sop, c
 		}
 
 		if (execl(request_meta_vars.script_filename, request_meta_vars.script_filename, (char *)0) < 0) {
-			/* return 500 */
+			write(STDOUT_FILENO, exec_err, exec_err_len);
+			exit(0);
 		}
-		exit(0);
 	}
-
+	return 200;
 }
 
 void
@@ -70,7 +97,7 @@ sws_cgi_debug(st_opts_props *sop)
 	request.req_path = "/cgi-bin?";
 	request.req_type = "GET";
 
-	sws_cgi_resquest_handler(0, &request, sop, "192.168.1.5");
+	sws_cgi_request_handler(0, &request, sop, "192.168.1.5");
 }
 
 static void

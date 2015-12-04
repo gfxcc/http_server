@@ -25,3 +25,4 @@ typedef struct {
 } sws_request_meta_variables_t;
 
 void sws_cgi_debug(st_opts_props *sop);
+int sws_cgi_request_handler(int fd_conn, st_request *request, st_opts_props *sop, char *client_ip_addr);

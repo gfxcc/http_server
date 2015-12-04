@@ -20,6 +20,7 @@
 #include "filelog.h"
 #include "magic_type.h"
 #include "sws_define.h"
+#include "cgi.h"
 
 /* struct initial (done!) */
 void sws_header_init(st_header *header)
@@ -359,12 +360,8 @@ void sws_http_respond_handler(int fd_connection, char* client_request_line, char
         // judege CGI
         if (request->req_code == 1 && sop->cgi_dir != NULL && strncmp(request->req_path, "/cgi-bin", 8) == 0)
         {
-            /*
-             *
-             *
-             *
-             * */
-            //status_code = 0;
+            status_code = sws_cgi_request_handler(fd_connection, request,
+						sop, client_ip_addr); 
             if (status_code == 200)
                 return;
         }

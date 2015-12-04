@@ -10,7 +10,7 @@
 #include "http.h"
 #include "server.h"
 #include "magic_type.h"
-#include "cgi.h"
+
 void usage();
 
 int main(int argc, char *argv[]) {
@@ -86,7 +86,6 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "%s is not a directory\n", server_props.root);
         return EXIT_FAILURE;
     }
-	// sws_cgi_debug(&server_props);  
 
     /* Daemonize if -d not set */
     /*
