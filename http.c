@@ -1,15 +1,25 @@
-//
-//  http.c
-//  sws
-//
-//  Created by Chen Wei on 11/14/15.
-//  Copyright (C) 2015 Chen Wei. All rights reserved.
-//
+/*
+ *  http.c
+ *  sws
+ *
+ *  Created by Chen Wei on 11/14/15.
+ *  Copyright (C) 2015 Chen Wei. All rights reserved.
+ */
+
+/*  When server receives a request from client, it calls http_respond_handler
+ *  so respond. In this method it uses server_parseline method to
+ *  parse request line and save request type, uri, protocol in header. Then
+ *  calls get_http_status to accquire status code according to header. With
+ *  status code and request type, server will send header information and file
+ *  content optionally.
+ */
+
 
 #include "http.h"
 #include "server.h"
 #include "filelog.h"
 #include "magic_type.h"
+#include "sws_define.h"
 
 /* struct initial (done!) */
 void sws_header_init(st_header *header)
@@ -17,17 +27,17 @@ void sws_header_init(st_header *header)
     header->time_now = sws_get_request_time();
     header->server_name = "SWS/1.0 \r\n";
     header->time_last_mod = NULL;
-    header->content_type = "text/html\r\n";
+    header->content_type = "text/html";
     header->content_length = 0;
 }
 
 void sws_clireq_init(st_request *request)
 {
     request->req_code = 0;
-    request->req_path = "/";
+    request->req_path = NULL;
     request->req_type = NULL;
     request->req_string = NULL;
-    request->type_conn = "HTTP/1.0";
+    request->type_conn = NULL;
 }
 
 void sws_log_init(st_log *log, char* client_ip_addr)
@@ -46,19 +56,28 @@ char* sws_get_http_status(int status_code)
     switch (status_code)
     {
         case 200:
-            http_status = "200 OK\r\n"; break;
-	case 304:
-	    http_status = "304 Not Modified\r\n"; break;
+            http_status = "200 OK\r\n";
+            break;
+        case 304:
+            http_status = "304 Not Modified\r\n";
+            break;
         case 400:
-            http_status = "400 Bad Request\r\n"; break;
+            http_status = "400 Bad Request\r\n";
+            break;
         case 403:
-            http_status = "403 Forbidden\r\n"; break;
+            http_status = "403 Forbidden\r\n";
+            break;
         case 404:
-            http_status = "404 Not Found\r\n"; break;
-        case 405:
-            http_status = "405 Method Not Allowed\r\n"; break;
+            http_status = "404 Not Found\r\n";
+            break;
         case 500:
-            http_status = "500 Internal Server Error\r\n"; break;
+            http_status = "500 Internal Server Error\r\n";
+            break;
+        case 501:
+            http_status = "501 Not implemented\r\n";
+            break;
+        default:
+            break;
     }
     return http_status;
 }
@@ -84,27 +103,25 @@ char* sws_get_mtime(time_t t)
 }
 
 
-/*
- * parse request from client. save request type,uri,protocol and 
- * if-modified-since date.  
- */
+/* get request from client (done!)*/
 void sws_server_parseline(char* client_request_line, st_request *req)
 {
-    printf("%s\n", client_request_line);
     char *token, *token2, *str1, *str2;
     char *save, *modified_time;
-    char req_type[4];
+    char req_type[1024];
     int i = 0, j = 0;
     token = strtok_r(client_request_line, "\r\n", &str1);
     while(token != NULL)
     {
         if(i == 0)
-	{   save = token;   }
+        {
+           save = token;
+        }
         else
-	{
+       {
             if(strncasecmp(token, "If-Modified-Since",
-		strlen("If-Modified-Since")) == 0)
-	    {
+                  strlen("If-Modified-Since")) == 0)
+            {
                 str2 = token;
                 strtok_r(str2,":",&modified_time);
             }
@@ -122,7 +139,7 @@ void sws_server_parseline(char* client_request_line, st_request *req)
             req->req_path = malloc(strlen(token2));
             strcpy(req->req_path, token2);
         }
-        else if (j == 2){ 
+        else if (j == 2){
             req->type_conn = malloc(strlen(token2));
             strcpy(req->type_conn, token2);
         }
@@ -130,205 +147,214 @@ void sws_server_parseline(char* client_request_line, st_request *req)
         j++;
     }
     req->req_string = client_request_line;
-    if (strncmp(req_type, "GET", 3) == 0 && i > 0){   
-        req->req_code = 1;  req->req_type = "GET";  
+    if (strncmp(req_type, "GET", 3) == 0 && i > 0){
+        req->req_code = 1;  req->req_type = "GET";
     }
-    else if (strncmp(req_type, "HEAD", 4) == 0 && i > 0){   
-        req->req_code = 2;  req->req_type = "HEAD"; 
+    else if (strncmp(req_type, "HEAD", 4) == 0 && i > 0){
+        req->req_code = 2;  req->req_type = "HEAD";
     }
-    else{  
+    else{
         req->req_type = req_type;
         req->req_code = 0;
     }
 }
 
-/* 
- * According to the request header information retun a status code.
- */
 int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
-                     st_request *request, st_header *header, st_log *log)
+                     st_request *request, st_header *header, st_log *log , int *type)
 {
     int status_code = 500;
     struct stat st_file, st_erro;
-    char file[PATH_MAX]; bzero(file, PATH_MAX);
-    char erro[PATH_MAX]; bzero(erro, PATH_MAX);
-    strcpy(file, sop->root); strcat(file, "/");
+    char file[PATH_MAX];
+    bzero(file, PATH_MAX);
+    char erro[PATH_MAX];
+    bzero(erro, PATH_MAX);
+    strcpy(file, sop->root);
+    strcat(file, "/");
     strcat(file, request->req_path);
-    getcwd(erro, PATH_MAX); strcat(erro, "/response_msg/");
-    printf("%s\n", file); 
-    
-    if (request->req_code == 0)
-    {
-        status_code = 405;
-        strcat(erro, "/405.html");
-        lstat(erro, &st_erro);
-        header->time_last_mod = sws_get_mtime(st_erro.st_mtime);
-        header->content_length = st_erro.st_size;
-        header->content_type=(char*)get_magictype(sop,file);
-        log->req = request->req_string;
-        log->http_status = status_code;
-        log->resp_len = st_erro.st_size;
-        return status_code;
-    }
-
-    else if (strncmp(request->type_conn, "HTTP/1.0", 8) != 0)
+    strcpy(request->req_path,file);
+    getcwd(erro, PATH_MAX);
+    strcat(erro, "/response_msg/");
+    if (request->type_conn == NULL )
     {
         status_code = 400;
         strcat(erro, "/400.html");
         lstat(erro, &st_erro);
-        header->time_last_mod = sws_get_mtime(st_erro.st_mtime);
-        header->content_length = st_erro.st_size;
-        header->content_type=(char*)get_magictype(sop,file);
-        log->req = request->req_string;
-        log->http_status = status_code;
-        log->resp_len = st_erro.st_size;
-        return status_code;
+        sws_http_status_msg(request,st_erro,status_code,header,log);
     }
-    
-    else if (lstat(file, &st_file) == -1)
+    else if ( strncmp(request->type_conn, "HTTP/1.0", 8) != 0 )
     {
-        status_code = 404;
-        strcat(erro, "/404.html");
+        status_code = 400;
+        strcat(erro, "/400.html");
         lstat(erro, &st_erro);
-        header->time_last_mod = sws_get_mtime(st_erro.st_mtime);
-        header->content_length = st_erro.st_size;
-        header->content_type=(char*)get_magictype(sop,file);
-        log->req = request->req_string;
-        log->http_status = status_code;
-        log->resp_len = st_erro.st_size;
-        return status_code;
+        sws_http_status_msg(request,st_erro,status_code,header,log);
     }
-    
-    else if (S_IROTH & st_file.st_mode)
+    else if(request->req_code == 0)
     {
-        if (S_ISDIR(st_file.st_mode))
-        {
-            char index[PATH_MAX];
-            struct stat st_index;
-            sprintf(index, "%s/index.html", file);
-            if (lstat(index, &st_index) == 0)
+        status_code = 501;
+        strcat(erro, "/501.html");
+        lstat(erro, &st_erro);
+        sws_http_status_msg(request,st_erro,status_code,header,log);
+    }
+
+    else{
+        /* if file or dir doesnt exists*/
+        if (stat(file, &st_file) == -1){
+            if(errno == ENOENT){
+                status_code = 404;
+                strcat(erro, "/404.html");
+                lstat(erro, &st_erro);
+                sws_http_status_msg(request,st_erro,status_code,header,log);
+            }
+            else{
+                status_code = 500;
+                strcat(erro, "/500.html");
+                lstat(erro, &st_erro);
+                sws_http_status_msg(request,st_erro,status_code,header,log);
+            }
+        }
+        /* file or dirt exists */
+        else{
+            /* if we can access the file*/
+            if(S_IROTH & st_file.st_mode)
             {
-                if (S_IROTH & st_index.st_mode)
+                if(S_ISDIR(st_file.st_mode))
                 {
-                    status_code = 200; 
-		    strcpy(file, index); lstat(file, &st_file);
-                    header->time_last_mod = sws_get_mtime(st_file.st_mtime);
-                    header->content_length = st_file.st_size;
-                    header->content_type=(char*)get_magictype(sop,file);
-                    log->req = request->req_string;
-                    log->http_status = status_code;
-                    log->resp_len = st_file.st_size;
-                    return status_code;
+                    char index[PATH_MAX];
+                    struct stat st_index;
+                    sprintf(index, "%s/index.html", file);
+                    if (stat(index, &st_index) == -1)
+                    {
+                        /* no index.html, return directory */
+                        if (errno == ENOENT)
+                        {
+                            status_code = 200;
+                            *type = 0;
+                            header->content_type=(char*)get_magictype(sop,file);
+                            sws_http_status_msg(request,st_file,status_code,header,log);
+                        }
+                        else
+                        {
+                            status_code = 500;
+                            strcat(erro, "/500.html");
+                            lstat(erro, &st_erro);
+                            header->content_type=(char*)get_magictype(sop,file);
+                            sws_http_status_msg(request,st_erro,status_code,header,log);
+                        }
+                    }
+                    else
+                    {   /* index.html */
+                        if(S_IROTH & st_index.st_mode){
+                            status_code = 200;
+                            *type = 1;
+                            sprintf(request->req_path, "%s", index);
+                        }
+                        else{
+                            status_code = 403;
+                        }
+                        header->content_type=(char*)get_magictype(sop,file);
+                        sws_http_status_msg(request,st_index,status_code,header,log);
+                    }
                 }
-                else
-                {
-                    status_code = 403;
-                    strcat(erro, "/403.html"); lstat(erro, &st_erro);
-                    header->time_last_mod = sws_get_mtime(st_erro.st_mtime);
+                else{
+                    /* file */
+                    status_code = 200;
+                    *type = 1;
+                    lstat(file, &st_file);
                     header->content_type=(char*)get_magictype(sop,file);
-                    header->content_length = st_erro.st_size;
-                    log->req = request->req_string;
-                    log->http_status = status_code;
-                    log->resp_len = st_erro.st_size;
-                    return status_code;
+                    sws_http_status_msg(request,st_file,status_code,header,log);
                 }
             }
-            else
-            {
-                status_code = 200;
-		lstat(file, &st_file);
-                header->content_type = "DIRECTORY\r\n";
-                header->time_last_mod = sws_get_mtime(st_file.st_mtime);
-                header->content_length = st_file.st_size;
+            /* we cannot access the file*/
+            else{
+                status_code = 403;
+                strcat(erro, "/403.html");
+                lstat(erro, &st_erro);
                 header->content_type=(char*)get_magictype(sop,file);
-                log->req = request->req_string;
-                log->http_status = status_code;
-                log->resp_len = st_file.st_size;
-                return status_code;
+                sws_http_status_msg(request,st_erro,status_code,header,log);
             }
         }
-        else
-        {
-            status_code = 200; lstat(file, &st_file);
-            header->time_last_mod = sws_get_mtime(st_file.st_mtime);
-            header->content_length = st_file.st_size;
-            header->content_type=(char*)get_magictype(sop,file);
-            log->req = request->req_string;
-            log->http_status = status_code;
-            log->resp_len = st_file.st_size;
-            return status_code;
-        }
     }
-    else
-    {
-        status_code = 403; 
-	strcat(erro, "/403.html"); lstat(erro, &st_erro);
-        header->time_last_mod = sws_get_mtime(st_erro.st_mtime);
-        header->content_length = st_erro.st_size;
-        header->content_type=(char*)get_magictype(sop,file);
-        log->req = request->req_string;
-        log->http_status = status_code;
-        log->resp_len = st_erro.st_size;
-        return status_code;
-    }
+    return status_code;
 }
 
+void sws_http_status_msg(st_request *request, struct stat st,int status_code, st_header *header, st_log *log){
+    header->time_last_mod = sws_get_mtime(st.st_mtime);
+    header->content_length = st.st_size;
+    log->req = request->req_string;
+    log->http_status = status_code;
+    log->resp_len = st.st_size;
+}
 
-/*
- * First call sws_server_parseline() to accquire header information then use 
- * sws_http_request_hanlder() method to accquire  a status code. According to
- * the status code then send header or file content optionally.
+/**
+ * If error_500 is 1(true), which means there are some errors happen in server.c
+ * In this case, just return 500 error.
  */
-void sws_http_respond_handler(int fd_connection, char* client_request_line, char* client_ip_addr, st_opts_props *sop)
+void sws_http_respond_handler(int fd_connection, char* client_request_line, char* client_ip_addr, st_opts_props *sop, int error_500)
 {
     int status_code = 500;
-    char response[MAX_BUFFER_LEN]; bzero(response, MAX_BUFFER_LEN);
-    char erro[PATH_MAX]; bzero(erro, PATH_MAX);
-    getcwd(erro, PATH_MAX); strcat(erro, "/response_msg");
+    char response[MAX_BUFFER_LEN];
+    bzero(response, MAX_BUFFER_LEN);
+    char erro[PATH_MAX];
+    bzero(erro, PATH_MAX);
+    getcwd(erro, PATH_MAX);
+    strcat(erro, "/response_msg");
 
     st_request *request = malloc(sizeof(st_request));
     st_header *header = malloc(sizeof(st_header));
     st_log *log = malloc(sizeof(st_log));
-    
+    int type=1;
     sws_clireq_init(request);
     sws_header_init(header);
     sws_log_init(log, client_ip_addr);
 
-    sws_server_parseline(client_request_line, request);
-    status_code = sws_http_request_handler(client_request_line, sop, request, header, log);
-    
-    if (status_code != 500)
-    {
+    /* 500 error from server.c */
+    if(!error_500){
+        sws_server_parseline(client_request_line, request);
+        status_code = sws_http_request_handler(client_request_line, sop, request, header, log, &type);
+    }
+    else{
+        char error[PATH_MAX];
+        bzero(error,PATH_MAX);
+        sprintf(error, "%s/%d.html",erro,status_code);
+        struct stat st_erro;
+        lstat(error, &st_erro);
+        sws_http_status_msg(request,st_erro,status_code,header,log);
+    }
+
+
+
+    /* if status code ==  200 return content */
+    if(status_code == 200){
+        char *content = sws_getContent(request->req_path,type);
         sprintf(response,
-                "HTTP/1.0 %sDate: %sServer: %sLast-Modified: %sContent-Type: %s\r\nContent-Length: %zu\r\n\r\n",
-                sws_get_http_status(log->http_status), header->time_now, header->server_name,
+                "HTTP/1.0 %sDate: %sServer: %sLast-Modified: %sContent-Type: %sContent-Length: %zu\r\n\r\n",
+                sws_get_http_status(status_code), header->time_now, header->server_name,
                 header->time_last_mod, header->content_type, header->content_length);
+        if(strcmp(request->req_type,"GET")==0)
+            sprintf(response,"%s%s\r\n",response,content);
+
         while(write(fd_connection, response, MAX_BUFFER_LEN) < 0);
         filelog_record(sop, log, erro);
     }
-    else
-    {
-        struct stat st_err;
-        char sws_err[PATH_MAX]; bzero(sws_err, PATH_MAX);
-        getcwd(sws_err, PATH_MAX); strcat(sws_err, "/dir_website/500.html");
-        lstat(sws_err, &st_err);
-        log->ip_addr = client_ip_addr;
-        log->time = sws_get_request_time();
-        log->req = client_request_line;
-        log->http_status = 500;
-        log->resp_len = st_err.st_size;
+    /* else return errors code */
+    else{
+        sprintf(erro, "%s/%d.html",erro,status_code);
+        char *content = sws_getContent(erro,type);
         sprintf(response,
-                "HTTP/1.0 %s \r\n\
-                Date: %s \r\n\
-                Server: SWS/1.0 \r\n\
-                Last-Modified: %s \r\n\
-                Content-Type: text/html \r\n\
-                Content-Length: %zu\r\n\r\n",
-                sws_get_http_status(log->http_status), log->time,
-                sws_get_mtime(st_err.st_mtime), st_err.st_size);
+                "HTTP/1.0 %sDate: %sServer: %sLast-Modified: %sContent-Type: %sContent-Length: %zu\r\n\r\n",
+                sws_get_http_status(status_code), header->time_now, header->server_name,
+                header->time_last_mod, header->content_type, header->content_length);
+        if(request->req_type!=NULL){
+            if(strcmp(request->req_type,"GET")==0){
+                sprintf(response,"%s%s\r\n",response,content);
+            }
+        }
         while(write(fd_connection, response, MAX_BUFFER_LEN) < 0);
         filelog_record(sop, log, erro);
     }
     free(request); free(header); free(log);
 }
+
+
+
 

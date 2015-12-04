@@ -207,6 +207,11 @@ void sws_daemon(int nochdir, int noclose)
 char* sws_getContent(char* path, int file)
 {
     char* content = (char*) malloc (sizeof(char) * MAX_CONTENT_LEN);
+    if (NULL == content)
+    {
+        sws_stderror("Fail to malloc");
+        return NULL;
+    }
     bzero(content, MAX_CONTENT_LEN);
     /* path indicate file */
     if (file)

@@ -1,3 +1,11 @@
 12/02
 1.parse request function can only parse one line, and do not support if-modified-since.(fixed)
 2.All dir request get 403 forbidden.(fixed)
+
+12/03
+3.nc cannot get response (fixed).
+4.if-modified-since problem.
+5.request "GET" will kill the program.
+
+12/04
+6.request directory, return index.html fail. (fixed)
