@@ -77,7 +77,9 @@ void server_exec(st_opts_props *sop)
                                 client_ip_addr, INET6_ADDRSTRLEN, 0, 0, NI_NUMERICHOST);
                 printf("[Client] %s connected \n", client_ip_addr);
                 char content[MAX_BUFFER_LEN];
-                char *enter = "\r\n";
+		/* The nc's enter is different from telnet */
+                char *enter_telnet = "\r\n";
+                char *enter_nc = "\n";
                 while (sws_read(fd_connection, client_request, MAX_BUFFER_LEN) > 0)
                 {
                     if (strlen(client_request) > 0)
@@ -85,7 +87,7 @@ void server_exec(st_opts_props *sop)
                         if(strlen(client_request)+strlen(content) <PATH_MAX)
                         {
                             strcat(content,client_request);
-                            if(strcmp(enter,client_request)==0)
+                            if(strcmp(enter_telnet,client_request)==0 || strcmp(enter_nc,client_request)==0)
                             {
                                 sws_http_respond_handler(fd_connection, content, client_ip_addr, sop);
                                 bzero(content,MAX_BUFFER_LEN);
@@ -121,7 +123,9 @@ void server_exec(st_opts_props *sop)
                                 client_ip_addr, INET6_ADDRSTRLEN, 0, 0, NI_NUMERICHOST);
                 printf("[Client] %s connected \n", client_ip_addr);
                 char content[MAX_BUFFER_LEN];
-                char *enter = "\r\n";
+		/* The nc's enter is different from telnet */
+                char *enter_telnet = "\r\n";
+                char *enter_nc = "\n";
                 while (sws_read(fd_connection, client_request, MAX_BUFFER_LEN) > 0)
                 {
                     if (strlen(client_request) > 0)
@@ -129,7 +133,7 @@ void server_exec(st_opts_props *sop)
                         if(strlen(client_request)+strlen(content) <PATH_MAX)
                         {
                             strcat(content,client_request);
-                            if(strcmp(enter,client_request)==0)
+                            if(strcmp(enter_telnet,client_request)==0 || strcmp(enter_nc,client_request)==0)
                             {
                                 sws_http_respond_handler(fd_connection, content, client_ip_addr, sop);
                                 bzero(content,MAX_BUFFER_LEN);
