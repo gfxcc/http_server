@@ -78,8 +78,7 @@ void server_exec(st_opts_props *sop)
                 printf("[Client] %s connected \n", client_ip_addr);
                 char content[MAX_BUFFER_LEN];
                 /* The nc's enter is different from telnet */
-                char *enter_telnet = "\r\n";
-                char *enter_nc = "\n";
+                char *enter_telnet = "\r\n\r\n";
                 while (sws_read(fd_connection, client_request, MAX_BUFFER_LEN) > 0)
                 {
                     if (strlen(client_request) > 0)
@@ -87,12 +86,14 @@ void server_exec(st_opts_props *sop)
                         if(strlen(client_request)+strlen(content) <MAX_BUFFER_LEN)
                         {
                             strcat(content,client_request);
-                            if(strcmp(enter_telnet,client_request)==0 || strcmp(enter_nc,client_request)==0)
-                            {
-                                sws_http_respond_handler(fd_connection, content, client_ip_addr, sop,0);
-                                bzero(content,MAX_BUFFER_LEN);
-                                break;
-                            }
+                            if(strlen(content) >= 4){
+                                if(strncmp(content+strlen(content)-4,enter_telnet,4) == 0)
+                                {
+                                    sws_http_respond_handler(fd_connection, content, client_ip_addr, sop,0);
+                                    bzero(content,MAX_BUFFER_LEN);
+                                    break;
+                                }
+      			    }
                         }
                         else{
                             //call http 500
@@ -126,8 +127,7 @@ void server_exec(st_opts_props *sop)
                 char content[MAX_BUFFER_LEN];
 
                 /* The nc's enter is different from telnet */
-                char *enter_telnet = "\r\n";
-                char *enter_nc = "\n";
+                char *enter_telnet = "\r\n\r\n";
                 while (sws_read(fd_connection, client_request, MAX_BUFFER_LEN) > 0)
                 {
                     if (strlen(client_request) > 0)
@@ -135,12 +135,14 @@ void server_exec(st_opts_props *sop)
                         if(strlen(client_request)+strlen(content) < MAX_BUFFER_LEN)
                         {
                             strcat(content,client_request);
-                            if(strcmp(enter_telnet,client_request)==0 || strcmp(enter_nc,client_request)==0)
-                            {
-                                sws_http_respond_handler(fd_connection, content, client_ip_addr, sop,0);
-                                bzero(content,MAX_BUFFER_LEN);
-                                break;
-                            }
+                            if(strlen(content) >= 4){
+				if(strncmp(content+strlen(content)-4,enter_telnet,4) == 0)
+                            	{
+                                    sws_http_respond_handler(fd_connection, content, client_ip_addr, sop,0);
+                                    bzero(content,MAX_BUFFER_LEN);
+                                    break;
+                                }
+			    }
                         }
                         else{
                             //call http 500
