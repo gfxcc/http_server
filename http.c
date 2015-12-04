@@ -1,14 +1,24 @@
-//
-//  http.c
-//  sws
-//
-//  Created by Chen Wei on 11/14/15.
-//  Copyright (C) 2015 Chen Wei. All rights reserved.
-//
+/*
+ *  http.c
+ *  sws
+ *
+ *  Created by Chen Wei on 11/14/15.
+ *  Copyright (C) 2015 Chen Wei. All rights reserved.
+ */
+
+/*  When server receives a request from client, it calls http_respond_handler
+ *  so respond. In this method it uses server_parseline method to 
+ *  parse request line and save request type, uri, protocol in header. Then 
+ *  calls get_http_status to accquire status code according to header. With 
+ *  status code and request type, server will send header information and file
+ *  content optionally.
+ */
+ 
 
 #include "http.h"
 #include "server.h"
 #include "filelog.h"
+#include "magic_type.h"
 
 /* struct initial (done!) */
 void sws_header_init(st_header *header)
@@ -16,7 +26,7 @@ void sws_header_init(st_header *header)
     header->time_now = sws_get_request_time();
     header->server_name = "SWS/1.0 \r\n";
     header->time_last_mod = NULL;
-    header->content_type = "text/html\r\n";
+    header->content_type = "text/html";
     header->content_length = 0;
 }
 
@@ -210,7 +220,8 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                         if (errno == ENOENT)
                         {
                             status_code = 200;
-                            header->content_type = "Directory";
+               
+                            header->content_type=(char*)get_magictype(sop,file);
                             sws_http_status_msg(request,st_file,status_code,header,log);
                         }
                         else
@@ -218,6 +229,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                             status_code = 500;
                             strcat(erro, "/500.html");
                             lstat(erro, &st_erro);
+                            header->content_type=(char*)get_magictype(sop,file);
                             sws_http_status_msg(request,st_erro,status_code,header,log);
                         }
                     }
@@ -229,6 +241,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                         else{
                             status_code = 403;
                         }
+                        header->content_type=(char*)get_magictype(sop,file);
                         sws_http_status_msg(request,st_index,status_code,header,log);
                     }
                 }
@@ -236,6 +249,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                     /* file */
                     status_code = 200;
                     lstat(file, &st_file);
+                    header->content_type=(char*)get_magictype(sop,file);
                     sws_http_status_msg(request,st_file,status_code,header,log);
                 }
             }
@@ -244,6 +258,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                 status_code = 403;
                 strcat(erro, "/403.html");
                 lstat(erro, &st_erro);
+                header->content_type=(char*)get_magictype(sop,file);
                 sws_http_status_msg(request,st_erro,status_code,header,log);
             }
         }
@@ -284,7 +299,7 @@ void sws_http_respond_handler(int fd_connection, char* client_request_line, char
     /* if status code ==  200 return content */
     if(status_code == 200){
         sprintf(response,
-                "HTTP/1.0 %sDate: %sServer: %sLast-Modified: %sContent-Type: %sContent-Length: %zu\r\n\r\n",
+                "HTTP/1.0 %sDate: %sServer: %sLast-Modified: %sContent-Type: %s\r\nContent-Length: %zu\r\n\r\n",
                 sws_get_http_status(status_code), header->time_now, header->server_name,
                 header->time_last_mod, header->content_type, header->content_length);
         while(write(fd_connection, response, MAX_BUFFER_LEN) < 0);
@@ -293,7 +308,7 @@ void sws_http_respond_handler(int fd_connection, char* client_request_line, char
     /* else return errors code */
     else{
         sprintf(response,
-                "HTTP/1.0 %sDate: %sServer: %sLast-Modified: %sContent-Type: %sContent-Length: %zu\r\n\r\n",
+                "HTTP/1.0 %sDate: %sServer: %sLast-Modified: %sContent-Type: %s\r\nContent-Length: %zu\r\n\r\n",
                 sws_get_http_status(status_code), header->time_now, header->server_name,
                 header->time_last_mod, header->content_type, header->content_length);
         sprintf(erro, "%s/%d.html",erro,status_code);
