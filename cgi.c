@@ -24,6 +24,7 @@ sws_cgi_resquest_handler(int fd_conn, st_request *request, st_opts_props *sop, c
 
 	/* TODO: return 404 */
 	if (request_meta_vars.script_filename == NULL) {
+		printf("No Script\n");
 	}
 
 	/* set env vars */
@@ -43,6 +44,7 @@ sws_cgi_resquest_handler(int fd_conn, st_request *request, st_opts_props *sop, c
 		while ((nread = read(fd[0], line, MAX_LINE)) > 0) {
 			write(STDOUT_FILENO, line, nread);
 		}
+		exit(0);
 
 	}
 	else {				/* child */
@@ -61,8 +63,19 @@ sws_cgi_resquest_handler(int fd_conn, st_request *request, st_opts_props *sop, c
 		if (execl(request_meta_vars.script_filename, request_meta_vars.script_filename, (char *)0) < 0) {
 			/* return 500 */
 		}
+		exit(0);
 	}
 
+}
+
+void
+sws_cgi_debug(st_opts_props *sop) 
+{
+	st_request request;
+	request.req_path = "/cgi-bin?";
+	request.req_type = "GET";
+
+	sws_cgi_resquest_handler(0, &request, sop, "192.168.1.5");
 }
 
 static void
@@ -76,9 +89,14 @@ sws_cgi_set_env(sws_request_meta_variables_t *request_meta_vars)
 	setenv("SERVER_PROTOCOL", request_meta_vars->server_protocol, 1);
 	setenv("SERVER_SOFTWARE", request_meta_vars->server_software, 1);
 	setenv("SCRIPT_NAME", request_meta_vars->script_name, 1);
-	setenv("QUERY_STRING", request_meta_vars->query_string, 1);
-	setenv("PATH_INFO", request_meta_vars->path_info, 1);
+	setenv("QUERY_STRING", request_meta_vars->query_string != NULL ? request_meta_vars->query_string : "", 1);
 	setenv("SCRIPT_FILENAME", request_meta_vars->script_filename, 1);
+	if (request_meta_vars->path_info != NULL) {
+		setenv("PATH_INFO", request_meta_vars->path_info, 1);
+	}
+	else {
+		unsetenv("PATH_INFO");
+	}
 }
 
 static void
@@ -157,8 +175,9 @@ sws_cgi_parse_meta_vars(st_request *request, st_opts_props *sop, char *client_ip
 	if (query_string_begin != NULL) {
 		index += size;
 		size = path_size - (query_string_begin - path + 1);
-		++size;
 		strncpy(buffer + index, query_string_begin + 1, size);
+		buffer[index + size] = '\0';
+		++size;
 		request_meta_vars->query_string = buffer + index;
 	}
 	else {
@@ -181,15 +200,16 @@ sws_cgi_parse_meta_vars(st_request *request, st_opts_props *sop, char *client_ip
 		tail = begin + path_size;
 	}
 
-	cur = begin;
+	cur = begin + 1;
 	while (cur < tail) {
 		while (cur < tail && *cur != '/') {
 			++cur;
 		}
-		if (sws_cgi_check_script(sop->cgi_dir, begin, cur - begin, script_path_buf) == 0) {
+		if (sws_cgi_check_script(sop->cgi_dir, begin, cur - begin, script_path_buf)) {
 			is_find_executable = 1;
 			break;
 		}
+		++cur;
 	}
 
 	if (!is_find_executable) {
@@ -200,31 +220,49 @@ sws_cgi_parse_meta_vars(st_request *request, st_opts_props *sop, char *client_ip
 	else {
 		index += size;
 		sws_cgi_path_combine(cgi_prefix, cgi_prefix_size, 
-					script_path_buf, strlen(script_path_buf), buffer + index);
+					begin, cur - begin, buffer + index);
 		size = strlen(buffer + index);
+		++size;
 		request_meta_vars->script_name = buffer + index;
 
 		if (cur != tail) {
 			index += size;
 			size = tail - cur;
 			strncpy(buffer + index, cur, size);
+			buffer[index + size] = '\0';
+			++size;
 			request_meta_vars->path_info = buffer + index;
 		}
 
 		index += size;
-		sws_cgi_path_combine(sop->cgi_dir, strlen(sop->cgi_dir), 
-					script_path_buf, strlen(script_path_buf), buffer + index);
-		size = strlen(buffer + index);
+		size = strlen(script_path_buf);
+		strncpy(buffer + index, script_path_buf, size);
+		buffer[index + size] = '\0';
+		++size;
 		request_meta_vars->script_filename = buffer + index;
 	}
 }
 
-/* return 0 for executable, -1 for others */
+/* return 1 for executable, 0 for others */
 static int
 sws_cgi_check_script(char *cgi_root, char *script_path, size_t script_path_size, char *buf)
 {
+	struct stat	stat_buf;
+
 	sws_cgi_path_combine(cgi_root, strlen(cgi_root), script_path, script_path_size, buf);
 	
+	if (access(buf, X_OK) == -1) {
+		return 0;
+	}
+	else {
+		if (lstat(buf, &stat_buf) < 0) {
+			return 0;
+		}
+		if (S_ISREG(stat_buf.st_mode)) {
+			return 1;
+		}
+		return 0;
+	}
 	return access(buf, X_OK);
 }
 

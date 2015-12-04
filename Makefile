@@ -5,6 +5,7 @@ LINK = $(CC)
 DEPS = filelog.h \
 	   http.h \
 	   server.h \
+       magic_type.h \
 	   sws.h \
 	   sws_define.h \
 	   cgi.h
@@ -15,7 +16,8 @@ OBJS = filelog.o \
 	   http.o \
 	   server.o \
 	   sws_define.o \
-	   cgi.o
+	   cgi.o \
+       magic_type.o
 
 default: build
 
@@ -28,7 +30,6 @@ clean:
 
 sws: sws.o $(OBJS)
 	$(LINK) -o sws sws.o $(OBJS) -lmagic
-
 
 sws.o: sws.c $(DEPS)
 	$(CC) -c $(CFLAGS) $(INCS) -o sws.o sws.c
@@ -48,3 +49,5 @@ sws_define.o: sws_define.c $(DEPS)
 cgi.o: cgi.c $(DEPS)
 	$(CC) -c $(CFLAGS) $(INCS) -o cgi.o cgi.c
 
+magic_type.o: magic_type.c $(DEPS)
+	$(CC) -c $(CFLAGS) $(INCS) -o magic_type.o magic_type.c

@@ -19,6 +19,7 @@ typedef struct opts_props
     char *file_log;     /* -l option, log all request to the given file */
     char *port;         /* -p option, listen to the given port, default:8080 */
     char *root;         /* dir as root of sws */
+    magic_t cookie;
 }st_opts_props;
 
 void sig_chld_handler(int sig);

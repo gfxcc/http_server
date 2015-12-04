@@ -29,6 +29,7 @@
 #include <limits.h>
 #include <semaphore.h>
 #include <time.h>
+#include <magic.h>
 
 #define MAX_BACK_LOG        1024
 #define MAX_CONTENT_LEN     8192

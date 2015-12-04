@@ -23,3 +23,5 @@ typedef struct {
 	char *server_software;
 	char buffer[MAX_BUFFER_LEN];
 } sws_request_meta_variables_t;
+
+void sws_cgi_debug(st_opts_props *sop);
