@@ -391,9 +391,9 @@ void sws_http_respond_handler(int fd_connection, char* client_request_line, char
                 sws_get_http_status(status_code), header->time_now, header->server_name,
                 header->time_last_mod, header->content_type, strlen(content));
         if(strcmp(request->req_type,"GET")==0)
-            sprintf(response,"%s%s\r\n",response,content);
+            sprintf(response,"%s%s",response,content);
 
-        while(write(fd_connection, response, MAX_BUFFER_LEN) < 0);
+        while(write(fd_connection, response, strlen(response)) < 0);
         filelog_record(sop, log, erro);
     }
     /* else return errors code */
@@ -406,10 +406,10 @@ void sws_http_respond_handler(int fd_connection, char* client_request_line, char
                 header->time_last_mod, header->content_type, header->content_length);
         if(request->req_type!=NULL){
             if(strcmp(request->req_type,"GET")==0){
-                sprintf(response,"%s%s\r\n",response,content);
+                sprintf(response,"%s%s",response,content);
             }
         }
-        while(write(fd_connection, response, MAX_BUFFER_LEN) < 0);
+        while(write(fd_connection, response, strlen(response)) < 0);
         filelog_record(sop, log, erro);
     }
     free(request); free(header); free(log);
