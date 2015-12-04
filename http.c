@@ -19,7 +19,10 @@
 #include "server.h"
 #include "filelog.h"
 #include "magic_type.h"
+#include "sws_define.h"
 
+char file[PATH_MAX];
+int flag;
 /* struct initial (done!) */
 void sws_header_init(st_header *header)
 {
@@ -163,7 +166,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
 {
     int status_code = 500;
     struct stat st_file, st_erro;
-    char file[PATH_MAX]; 
+   // char file[PATH_MAX]; 
     bzero(file, PATH_MAX);
     char erro[PATH_MAX]; 
     bzero(erro, PATH_MAX);
@@ -211,6 +214,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
             {
                 if(S_ISDIR(st_file.st_mode))
                 {
+                    flag=0;
                     char index[PATH_MAX];
                     struct stat st_index;
                     sprintf(index, "%s/index.html", file);
@@ -247,6 +251,8 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                 }
                 else{
                     /* file */
+                    flag=1;
+
                     status_code = 200;
                     lstat(file, &st_file);
                     header->content_type=(char*)get_magictype(sop,file);
@@ -277,6 +283,11 @@ void sws_http_status_msg(st_request *request, struct stat st,int status_code, st
 
 void sws_http_respond_handler(int fd_connection, char* client_request_line, char* client_ip_addr, st_opts_props *sop)
 {
+    char* content = (char*) malloc (sizeof(char) * MAX_CONTENT_LEN);
+    bzero(content, MAX_CONTENT_LEN);
+
+    //int flag;
+   // char file[PATH_MAX];
     int status_code = 500;
     char response[MAX_BUFFER_LEN];
     bzero(response, MAX_BUFFER_LEN);
@@ -304,6 +315,8 @@ void sws_http_respond_handler(int fd_connection, char* client_request_line, char
                 header->time_last_mod, header->content_type, header->content_length);
         while(write(fd_connection, response, MAX_BUFFER_LEN) < 0);
         filelog_record(sop, log, erro);
+        content = sws_getContent(file,flag);
+        send(fd_connection,content,strlen(content),0);
     }
     /* else return errors code */
     else{
