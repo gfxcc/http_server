@@ -21,8 +21,6 @@
 #include "magic_type.h"
 #include "sws_define.h"
 
-char file[PATH_MAX];
-int flag;
 /* struct initial (done!) */
 void sws_header_init(st_header *header)
 {
@@ -36,10 +34,10 @@ void sws_header_init(st_header *header)
 void sws_clireq_init(st_request *request)
 {
     request->req_code = 0;
-    request->req_path = "/";
+    request->req_path = NULL;
     request->req_type = NULL;
     request->req_string = NULL;
-    request->type_conn = "HTTP/1.0";
+    request->type_conn = NULL;
 }
 
 void sws_log_init(st_log *log, char* client_ip_addr)
@@ -116,14 +114,14 @@ void sws_server_parseline(char* client_request_line, st_request *req)
     while(token != NULL)
     {
         if(i == 0)
-	    {
+        {
            save = token;   
         }
         else
-	   {
+       {
             if(strncasecmp(token, "If-Modified-Since",
-    		      strlen("If-Modified-Since")) == 0)
-    	    {
+                  strlen("If-Modified-Since")) == 0)
+            {
                 str2 = token;
                 strtok_r(str2,":",&modified_time);
             }
@@ -162,21 +160,28 @@ void sws_server_parseline(char* client_request_line, st_request *req)
 }
 
 int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
-                     st_request *request, st_header *header, st_log *log)
+                     st_request *request, st_header *header, st_log *log , int *type)
 {
     int status_code = 500;
     struct stat st_file, st_erro;
-   // char file[PATH_MAX]; 
+    char file[PATH_MAX]; 
     bzero(file, PATH_MAX);
     char erro[PATH_MAX]; 
     bzero(erro, PATH_MAX);
     strcpy(file, sop->root); 
     strcat(file, "/");
     strcat(file, request->req_path);
+    strcpy(request->req_path,file);
     getcwd(erro, PATH_MAX); 
     strcat(erro, "/response_msg/");
-    
-    if (strncmp(request->type_conn, "HTTP/1.0", 8) != 0 )
+    if (request->type_conn == NULL )
+    {
+        status_code = 400;
+        strcat(erro, "/400.html");
+        lstat(erro, &st_erro);
+        sws_http_status_msg(request,st_erro,status_code,header,log);
+    }
+    else if ( strncmp(request->type_conn, "HTTP/1.0", 8) != 0 )
     {
         status_code = 400;
         strcat(erro, "/400.html");
@@ -214,7 +219,6 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
             {
                 if(S_ISDIR(st_file.st_mode))
                 {
-                    flag=0;
                     char index[PATH_MAX];
                     struct stat st_index;
                     sprintf(index, "%s/index.html", file);
@@ -224,7 +228,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                         if (errno == ENOENT)
                         {
                             status_code = 200;
-               
+                            *type = 0;
                             header->content_type=(char*)get_magictype(sop,file);
                             sws_http_status_msg(request,st_file,status_code,header,log);
                         }
@@ -241,6 +245,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                     {   /* index.html */
                         if(S_IROTH & st_index.st_mode){
                             status_code = 200; 
+                            *type = 1;
                         }
                         else{
                             status_code = 403;
@@ -251,9 +256,8 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                 }
                 else{
                     /* file */
-                    flag=1;
-
                     status_code = 200;
+                    *type = 1;
                     lstat(file, &st_file);
                     header->content_type=(char*)get_magictype(sop,file);
                     sws_http_status_msg(request,st_file,status_code,header,log);
@@ -280,14 +284,12 @@ void sws_http_status_msg(st_request *request, struct stat st,int status_code, st
     log->resp_len = st.st_size;
 }
 
-
-void sws_http_respond_handler(int fd_connection, char* client_request_line, char* client_ip_addr, st_opts_props *sop)
+/**
+ * If error_500 is 1(true), which means there are some errors happen in server.c
+ * In this case, just return 500 error.
+ */
+void sws_http_respond_handler(int fd_connection, char* client_request_line, char* client_ip_addr, st_opts_props *sop, int error_500)
 {
-    char* content = (char*) malloc (sizeof(char) * MAX_CONTENT_LEN);
-    bzero(content, MAX_CONTENT_LEN);
-
-    //int flag;
-   // char file[PATH_MAX];
     int status_code = 500;
     char response[MAX_BUFFER_LEN];
     bzero(response, MAX_BUFFER_LEN);
@@ -299,36 +301,59 @@ void sws_http_respond_handler(int fd_connection, char* client_request_line, char
     st_request *request = malloc(sizeof(st_request));
     st_header *header = malloc(sizeof(st_header));
     st_log *log = malloc(sizeof(st_log));
-    
+    int type=1;
     sws_clireq_init(request);
     sws_header_init(header);
     sws_log_init(log, client_ip_addr);
 
-    sws_server_parseline(client_request_line, request);
-    status_code = sws_http_request_handler(client_request_line, sop, request, header, log);
-    
+    /* 500 error from server.c */
+    if(!error_500){
+        sws_server_parseline(client_request_line, request);
+        status_code = sws_http_request_handler(client_request_line, sop, request, header, log, &type);
+    }
+    else{
+        char error[PATH_MAX];
+        bzero(error,PATH_MAX);
+        sprintf(error, "%s/%d.html",erro,status_code);
+        struct stat st_erro;
+        lstat(error, &st_erro);
+        sws_http_status_msg(request,st_erro,status_code,header,log);
+    }
+
+   
+
     /* if status code ==  200 return content */
     if(status_code == 200){
+        char *content = sws_getContent(request->req_path,type);
         sprintf(response,
-                "HTTP/1.0 %sDate: %sServer: %sLast-Modified: %sContent-Type: %s\r\nContent-Length: %zu\r\n\r\n",
+                "HTTP/1.0 %sDate: %sServer: %sLast-Modified: %sContent-Type: %sContent-Length: %zu\r\n\r\n",
                 sws_get_http_status(status_code), header->time_now, header->server_name,
                 header->time_last_mod, header->content_type, header->content_length);
+        if(strcmp(request->req_type,"GET")==0)
+            sprintf(response,"%s%s\r\n",response,content);
+
         while(write(fd_connection, response, MAX_BUFFER_LEN) < 0);
         filelog_record(sop, log, erro);
-        content = sws_getContent(file,flag);
-        send(fd_connection,content,strlen(content),0);
     }
     /* else return errors code */
     else{
+        sprintf(erro, "%s/%d.html",erro,status_code);
+        char *content = sws_getContent(erro,type);
         sprintf(response,
-                "HTTP/1.0 %sDate: %sServer: %sLast-Modified: %sContent-Type: %s\r\nContent-Length: %zu\r\n\r\n",
+                "HTTP/1.0 %sDate: %sServer: %sLast-Modified: %sContent-Type: %sContent-Length: %zu\r\n\r\n",
                 sws_get_http_status(status_code), header->time_now, header->server_name,
                 header->time_last_mod, header->content_type, header->content_length);
-        sprintf(erro, "%s/%d.html",erro,status_code);
+        if(request->req_type!=NULL){
+            if(strcmp(request->req_type,"GET")==0){
+                sprintf(response,"%s%s\r\n",response,content);
+            }
+        }
         while(write(fd_connection, response, MAX_BUFFER_LEN) < 0);
         filelog_record(sop, log, erro);
     }
     free(request); free(header); free(log);
 }
+
+
 
 

@@ -4,3 +4,5 @@
 
 12/03
 3.nc cannot get response (fixed).
+4.if-modified-since problem.
+5.request "GET" will kill the program.

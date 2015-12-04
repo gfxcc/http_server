@@ -48,9 +48,10 @@ void sws_clireq_init(st_request *request);
 void sws_log_init(st_log *log, char* client_ip_addr);
 void sws_server_parseline(char* client_request_line, st_request *req);
 
-int sws_http_request_handler(char* client_request_line, st_opts_props *sop, st_request *request, st_header *header, st_log *log);
-void sws_http_respond_handler(int fd_connection, char* client_request_line, char* client_ip_addr, st_opts_props *sop);
+int sws_http_request_handler(char* client_request_line, st_opts_props *sop, st_request *request, st_header *header, st_log *log , int *type);
+void sws_http_respond_handler(int fd_connection, char* client_request_line, char* client_ip_addr, st_opts_props *sop, int error_500);
 
 void sws_http_status_msg(st_request *request, struct stat st,int status_code, st_header *header, st_log *log);
 
 #endif /* http_h */
+
