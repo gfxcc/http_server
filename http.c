@@ -46,6 +46,8 @@ char* sws_get_http_status(int status_code)
     {
         case 200:
             http_status = "200 OK\r\n"; break;
+	case 304:
+	    http_status = "304 Not Modified\r\n"; break;
         case 400:
             http_status = "400 Bad Request\r\n"; break;
         case 403:
@@ -84,17 +86,21 @@ char* sws_get_mtime(time_t t)
 /* get request from client (done!)*/
 void sws_server_parseline(char* client_request_line, st_request *req)
 {
-    char *token,*str1,*str2;
+    printf("%s\n", client_request_line);
+    char *token, *token2, *str1, *str2;
     char *save, *modified_time;
     char req_type[4];
-    int i=0;
+    int i = 0, j = 0;
     token = strtok_r(client_request_line, "\r\n", &str1);
-    while(token != NULL){
-        if(i==0){
-            save = token;
-        }
-        else{
-            if(strncasecmp(token,"if-modified-since",strlen("if-modified-since")) == 0){
+    while(token != NULL)
+    {
+        if(i == 0)
+	{   save = token;   }
+        else
+	{
+            if(strncasecmp(token, "If-Modified-Since",
+		strlen("If-Modified-Since")) == 0)
+	    {
                 str2 = token;
                 strtok_r(str2,":",&modified_time);
             }
@@ -102,8 +108,6 @@ void sws_server_parseline(char* client_request_line, st_request *req)
         token = strtok_r(NULL,"\r\n",&str1);
         i++;
     }
-    char *token2;
-    int j = 0;
     token2 = strtok_r(NULL, " ", &save);
     while (token2 != NULL)
     {
@@ -128,8 +132,7 @@ void sws_server_parseline(char* client_request_line, st_request *req)
     else if (strncmp(req_type, "HEAD", 4) == 0 && i > 0){   
         req->req_code = 2;  req->req_type = "HEAD"; 
     }
-    else
-    {  
+    else{  
         req->req_type = req_type;
         req->req_code = 0;
     }
@@ -144,9 +147,10 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
     char erro[PATH_MAX]; bzero(erro, PATH_MAX);
     strcpy(file, sop->root); strcat(file, "/");
     strcat(file, request->req_path);
-    getcwd(erro, PATH_MAX); strcat(erro, "/dir_website");
+    getcwd(erro, PATH_MAX); strcat(erro, "/response_msg/");
+    printf("%s\n", file); 
     
-    if (strncmp(request->type_conn, "HTTP/1.0", 8) != 0)
+    if (request->req_code == 0)
     {
         status_code = 405;
         strcat(erro, "/405.html");
@@ -158,8 +162,8 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
         log->resp_len = st_erro.st_size;
         return status_code;
     }
-    
-    else if (request->req_code == 0)
+
+    else if (strncmp(request->type_conn, "HTTP/1.0", 8) != 0)
     {
         status_code = 400;
         strcat(erro, "/400.html");
@@ -172,7 +176,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
         return status_code;
     }
     
-    else if (lstat(file, &st_file) == ENOENT)
+    else if (lstat(file, &st_file) == -1)
     {
         status_code = 404;
         strcat(erro, "/404.html");
@@ -192,11 +196,12 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
             char index[PATH_MAX];
             struct stat st_index;
             sprintf(index, "%s/index.html", file);
-            if (lstat(index, &st_index) != ENOENT)
+            if (lstat(index, &st_index) == 0)
             {
                 if (S_IROTH & st_index.st_mode)
                 {
-                    status_code = 200; strcpy(file, index);
+                    status_code = 200; 
+		    strcpy(file, index); lstat(file, &st_file);
                     header->time_last_mod = sws_get_mtime(st_file.st_mtime);
                     header->content_length = st_file.st_size;
                     log->req = request->req_string;
@@ -207,8 +212,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                 else
                 {
                     status_code = 403;
-                    strcat(erro, "/403.html");
-                    lstat(erro, &st_erro);
+                    strcat(erro, "/403.html"); lstat(erro, &st_erro);
                     header->time_last_mod = sws_get_mtime(st_erro.st_mtime);
                     header->content_length = st_erro.st_size;
                     log->req = request->req_string;
@@ -220,7 +224,8 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
             else
             {
                 status_code = 200;
-                header->content_type = "Directory";
+		lstat(file, &st_file);
+                header->content_type = "DIRECTORY\r\n";
                 header->time_last_mod = sws_get_mtime(st_file.st_mtime);
                 header->content_length = st_file.st_size;
                 log->req = request->req_string;
@@ -231,7 +236,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
         }
         else
         {
-            status_code = 200;
+            status_code = 200; lstat(file, &st_file);
             header->time_last_mod = sws_get_mtime(st_file.st_mtime);
             header->content_length = st_file.st_size;
             log->req = request->req_string;
@@ -242,10 +247,8 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
     }
     else
     {
-        status_code = 403;
-        strcat(erro, "/403.html");
-        if(lstat(erro, &st_erro) == ENOENT)
-        {   status_code = 500;  return status_code; }
+        status_code = 403; 
+	strcat(erro, "/403.html"); lstat(erro, &st_erro);
         header->time_last_mod = sws_get_mtime(st_erro.st_mtime);
         header->content_length = st_erro.st_size;
         log->req = request->req_string;
@@ -260,7 +263,7 @@ void sws_http_respond_handler(int fd_connection, char* client_request_line, char
     int status_code = 500;
     char response[MAX_BUFFER_LEN]; bzero(response, MAX_BUFFER_LEN);
     char erro[PATH_MAX]; bzero(erro, PATH_MAX);
-    getcwd(erro, PATH_MAX); strcat(erro, "/dir_website");
+    getcwd(erro, PATH_MAX); strcat(erro, "/response_msg");
 
     st_request *request = malloc(sizeof(st_request));
     st_header *header = malloc(sizeof(st_header));
@@ -269,13 +272,14 @@ void sws_http_respond_handler(int fd_connection, char* client_request_line, char
     sws_clireq_init(request);
     sws_header_init(header);
     sws_log_init(log, client_ip_addr);
+
     sws_server_parseline(client_request_line, request);
     status_code = sws_http_request_handler(client_request_line, sop, request, header, log);
     
     if (status_code != 500)
     {
         sprintf(response,
-                "HTTP/1.0 %s Date: %s Server: %s Last-Modified: %s Content-Type: %s Content-Length: %zu\r\n\r\n",
+                "HTTP/1.0 %sDate: %sServer: %sLast-Modified: %sContent-Type: %sContent-Length: %zu\r\n\r\n",
                 sws_get_http_status(log->http_status), header->time_now, header->server_name,
                 header->time_last_mod, header->content_type, header->content_length);
         while(write(fd_connection, response, MAX_BUFFER_LEN) < 0);

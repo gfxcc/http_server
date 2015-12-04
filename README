@@ -38,7 +38,7 @@ Http 1.0
 /---------------------------------------------------------------------------/
 
 Response Code:
-200 	OK
+200	 	OK
 304		Not Modified
 400		Bad Request
 403		Forbidden

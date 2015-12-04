@@ -1,5 +1,5 @@
 CC = cc
-CFLAGS = -pipe -O0 -W -Wall -Wpointer-arith -Wno-unused-parameter -Wno-unused-function -Werror -g
+CFLAGS = -std=gnu99 -pipe -O0 -W -Wall -Wpointer-arith -Wno-unused-parameter -Wno-unused-function -Werror -g
 LINK = $(CC)
 
 DEPS = filelog.h \
