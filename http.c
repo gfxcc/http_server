@@ -9,6 +9,7 @@
 #include "http.h"
 #include "server.h"
 #include "filelog.h"
+#include "magic_type.h"
 
 /* struct initial (done!) */
 void sws_header_init(st_header *header)
@@ -157,6 +158,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
         lstat(erro, &st_erro);
         header->time_last_mod = sws_get_mtime(st_erro.st_mtime);
         header->content_length = st_erro.st_size;
+        header->content_type=(char*)get_magictype(sop,file);
         log->req = request->req_string;
         log->http_status = status_code;
         log->resp_len = st_erro.st_size;
@@ -170,6 +172,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
         lstat(erro, &st_erro);
         header->time_last_mod = sws_get_mtime(st_erro.st_mtime);
         header->content_length = st_erro.st_size;
+        header->content_type=(char*)get_magictype(sop,file);
         log->req = request->req_string;
         log->http_status = status_code;
         log->resp_len = st_erro.st_size;
@@ -183,6 +186,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
         lstat(erro, &st_erro);
         header->time_last_mod = sws_get_mtime(st_erro.st_mtime);
         header->content_length = st_erro.st_size;
+        header->content_type=(char*)get_magictype(sop,file);
         log->req = request->req_string;
         log->http_status = status_code;
         log->resp_len = st_erro.st_size;
@@ -204,6 +208,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
 		    strcpy(file, index); lstat(file, &st_file);
                     header->time_last_mod = sws_get_mtime(st_file.st_mtime);
                     header->content_length = st_file.st_size;
+                    header->content_type=(char*)get_magictype(sop,file);
                     log->req = request->req_string;
                     log->http_status = status_code;
                     log->resp_len = st_file.st_size;
@@ -214,6 +219,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                     status_code = 403;
                     strcat(erro, "/403.html"); lstat(erro, &st_erro);
                     header->time_last_mod = sws_get_mtime(st_erro.st_mtime);
+                    header->content_type=(char*)get_magictype(sop,file);
                     header->content_length = st_erro.st_size;
                     log->req = request->req_string;
                     log->http_status = status_code;
@@ -228,6 +234,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                 header->content_type = "DIRECTORY\r\n";
                 header->time_last_mod = sws_get_mtime(st_file.st_mtime);
                 header->content_length = st_file.st_size;
+                header->content_type=(char*)get_magictype(sop,file);
                 log->req = request->req_string;
                 log->http_status = status_code;
                 log->resp_len = st_file.st_size;
@@ -239,6 +246,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
             status_code = 200; lstat(file, &st_file);
             header->time_last_mod = sws_get_mtime(st_file.st_mtime);
             header->content_length = st_file.st_size;
+            header->content_type=(char*)get_magictype(sop,file);
             log->req = request->req_string;
             log->http_status = status_code;
             log->resp_len = st_file.st_size;
@@ -251,6 +259,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
 	strcat(erro, "/403.html"); lstat(erro, &st_erro);
         header->time_last_mod = sws_get_mtime(st_erro.st_mtime);
         header->content_length = st_erro.st_size;
+        header->content_type=(char*)get_magictype(sop,file);
         log->req = request->req_string;
         log->http_status = status_code;
         log->resp_len = st_erro.st_size;
@@ -279,7 +288,7 @@ void sws_http_respond_handler(int fd_connection, char* client_request_line, char
     if (status_code != 500)
     {
         sprintf(response,
-                "HTTP/1.0 %sDate: %sServer: %sLast-Modified: %sContent-Type: %sContent-Length: %zu\r\n\r\n",
+                "HTTP/1.0 %sDate: %sServer: %sLast-Modified: %sContent-Type: %s\r\nContent-Length: %zu\r\n\r\n",
                 sws_get_http_status(log->http_status), header->time_now, header->server_name,
                 header->time_last_mod, header->content_type, header->content_length);
         while(write(fd_connection, response, MAX_BUFFER_LEN) < 0);

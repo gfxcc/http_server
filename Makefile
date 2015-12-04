@@ -5,6 +5,7 @@ LINK = $(CC)
 DEPS = filelog.h \
 	   http.h \
 	   server.h \
+           magic_type.h \
 	   sws.h \
 	   sws_define.h
 
@@ -13,6 +14,7 @@ INCS = -I ./
 OBJS = filelog.o \
 	   http.o \
 	   server.o \
+           magic_type.o \
 	   sws_define.o
 
 default: build

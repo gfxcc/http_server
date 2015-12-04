@@ -9,6 +9,7 @@
 #include "sws.h"
 #include "http.h"
 #include "server.h"
+#include "magic_type.h"
 
 void usage();
 
@@ -18,6 +19,11 @@ int main(int argc, char *argv[]) {
     st_opts_props server_props;
     init_opts_props(&server_props);
     
+    /* magic initialization */
+    if(init_magic(&server_props))
+    {
+        exit(EXIT_FAILURE);
+    }    
     /* option analysis */
     int opt = 0, port_to_int;
     while ((opt = getopt(argc, argv, "c:dhi:l:p:")) != -1)
