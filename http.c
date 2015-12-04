@@ -84,7 +84,10 @@ char* sws_get_mtime(time_t t)
 }
 
 
-/* get request from client (done!)*/
+/*
+ * parse request from client. save request type,uri,protocol and 
+ * if-modified-since date.  
+ */
 void sws_server_parseline(char* client_request_line, st_request *req)
 {
     printf("%s\n", client_request_line);
@@ -139,6 +142,9 @@ void sws_server_parseline(char* client_request_line, st_request *req)
     }
 }
 
+/* 
+ * According to the request header information retun a status code.
+ */
 int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                      st_request *request, st_header *header, st_log *log)
 {
@@ -267,6 +273,12 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
     }
 }
 
+
+/*
+ * First call sws_server_parseline() to accquire header information then use 
+ * sws_http_request_hanlder() method to accquire  a status code. According to
+ * the status code then send header or file content optionally.
+ */
 void sws_http_respond_handler(int fd_connection, char* client_request_line, char* client_ip_addr, st_opts_props *sop)
 {
     int status_code = 500;
