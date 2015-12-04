@@ -86,12 +86,14 @@ void server_exec(st_opts_props *sop)
                         if(strlen(client_request)+strlen(content) <MAX_BUFFER_LEN)
                         {
                             strcat(content,client_request);
-                            if(strncmp(content+strlen(content)-4,enter_telnet,4) == 0)
-                            {
-                                sws_http_respond_handler(fd_connection, content, client_ip_addr, sop,0);
-                                bzero(content,MAX_BUFFER_LEN);
-                                break;
-                            }
+                            if(strlen(content) >= 4){
+                                if(strncmp(content+strlen(content)-4,enter_telnet,4) == 0)
+                                {
+                                    sws_http_respond_handler(fd_connection, content, client_ip_addr, sop,0);
+                                    bzero(content,MAX_BUFFER_LEN);
+                                    break;
+                                }
+      			    }
                         }
                         else{
                             //call http 500
@@ -133,12 +135,14 @@ void server_exec(st_opts_props *sop)
                         if(strlen(client_request)+strlen(content) < MAX_BUFFER_LEN)
                         {
                             strcat(content,client_request);
-                            if(strncmp(content+strlen(content)-4,enter_telnet,4) == 0)
-                            {
-                                sws_http_respond_handler(fd_connection, content, client_ip_addr, sop,0);
-                                bzero(content,MAX_BUFFER_LEN);
-                                break;
-                            }
+                            if(strlen(content) >= 4){
+				if(strncmp(content+strlen(content)-4,enter_telnet,4) == 0)
+                            	{
+                                    sws_http_respond_handler(fd_connection, content, client_ip_addr, sop,0);
+                                    bzero(content,MAX_BUFFER_LEN);
+                                    break;
+                                }
+			    }
                         }
                         else{
                             //call http 500
