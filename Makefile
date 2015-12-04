@@ -25,7 +25,8 @@ clean:
 
 
 sws: sws.o $(OBJS)
-	$(LINK) -o sws sws.o $(OBJS)
+	$(LINK) -o sws sws.o $(OBJS) -lmagic
+
 
 sws.o: sws.c $(DEPS)
 	$(CC) -c $(CFLAGS) $(INCS) -o sws.o sws.c
