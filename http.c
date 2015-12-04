@@ -321,14 +321,13 @@ void sws_http_respond_handler(int fd_connection, char* client_request_line, char
     if(!error_500){
         sws_server_parseline(client_request_line, request);
         // judege CGI
-        if (request->req_code == 1 && sop->cgi_dir != NULL && strncpy(request->req_path, "/cgi-bin", 8) == 0)
+        if (request->req_code == 1 && sop->cgi_dir != NULL && strncmp(request->req_path, "/cgi-bin", 8) == 0)
         {
             /*
              *
              *
              *
              * */
-            printf("in CGI\n");
             //status_code = 0;
             if (status_code == 200)
                 return;
