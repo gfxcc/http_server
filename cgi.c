@@ -48,12 +48,7 @@ sws_cgi_resquest_handler(int fd_conn, st_request *request, st_opts_props *sop, c
 
 	}
 	else {				/* child */
-		/* connent standard input and output to pipes */ 
-		/*
-		if (fd[0] != STDIN_FILENO) {
-			dup2(fd[0], STDIN_FILENO);
-			close(fd[0]);
-		}*/
+		/* connent standard output to pipes */ 
 		close(fd[0]);
 		if (fd[1] != STDOUT_FILENO) {
 			dup2(fd[1], STDOUT_FILENO);

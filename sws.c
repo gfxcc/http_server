@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "%s is not a directory\n", server_props.root);
         return EXIT_FAILURE;
     }
-	sws_cgi_debug(&server_props);  
+	// sws_cgi_debug(&server_props);  
     /* Daemonize if -d not set */
     /*
     if (!server_props.debug_mode)
