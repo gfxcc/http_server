@@ -5,6 +5,8 @@
 //  Created by Chen Wei on 11/13/15.
 //  Copyright (C) 2015 Chen Wei. All rights reserved.
 //
+#define _GNU_SOURCE
+
 #include "sws_define.h"
 
 /* Re-define for error message generation */
@@ -245,4 +247,18 @@ char* sws_getContent(char* path, int file)
     }
 
     return content;
+}
+
+int parse_time(char*if_modify, time_t*tms){
+    char*tmp;
+    struct tm st;
+    memset(&st,0,sizeof(struct tm));
+    if((tmp=strptime(if_modify, "%a, %d %b %Y %T GMT",&st))==NULL){
+        return 0;
+    }
+    if(*tmp)
+       return 0;
+    *tms = timegm(&st);
+    return 1;
+            
 }

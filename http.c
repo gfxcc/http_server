@@ -169,6 +169,7 @@ void sws_server_parseline(char* client_request_line, st_request *req)
 int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                      st_request *request, st_header *header, st_log *log , int *type)
 {
+    time_t last_mod;
     int status_code = 500;
     struct stat st_file, st_erro;
     char file[PATH_MAX];
@@ -205,6 +206,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
         lstat(erro, &st_erro);
         sws_http_status_msg(request,st_erro,status_code,header,log);
     }
+    
 
     else{
         /* if file or dir doesnt exists*/
@@ -236,11 +238,23 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                     {
                         /* no index.html, return directory */
                         if (errno == ENOENT)
-                        {
-                            status_code = 200;
-                            *type = 0;
-                            header->content_type=(char*)get_magictype(sop,file);
-                            sws_http_status_msg(request,st_file,status_code,header,log);
+                        {   
+
+                            if(header->time_last_mod && parse_time(header->time_last_mod,&last_mod)&&
+                                 last_mod>=st_file.st_mtime){
+                                 status_code = 304;
+                                 strcat(erro,"/304.html");
+                                 lstat(erro,&st_erro);
+                                 sws_http_status_msg(request,st_erro,status_code,header,log);
+                            }
+                            else
+                            {
+
+                                 status_code = 200;
+                                 *type = 0;
+                                 header->content_type=(char*)get_magictype(sop,file);
+                                 sws_http_status_msg(request,st_file,status_code,header,log);
+                            }
                         }
                         else
                         {
@@ -253,25 +267,47 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                     }
                     else
                     {   /* index.html */
-                        if(S_IROTH & st_index.st_mode){
-                            status_code = 200;
-                            *type = 1;
-                            sprintf(request->req_path, "%s", index);
+                        if(header->time_last_mod && parse_time(header->time_last_mod,&last_mod)&&
+                           last_mod>=st_file.st_mtime){
+                               status_code = 304;
+                               strcat(erro,"/304.html");
+                               lstat(erro,&st_erro);
+                               sws_http_status_msg(request,st_erro,status_code,header,log);
                         }
-                        else{
-                            status_code = 403;
-                        }
-                        header->content_type=(char*)get_magictype(sop,file);
-                        sws_http_status_msg(request,st_index,status_code,header,log);
+                        else
+                        {
+
+                             if(S_IROTH & st_index.st_mode){
+                                  status_code = 200;
+                                  *type = 1;
+                                  sprintf(request->req_path, "%s", index);
+                             }
+                             else{
+                                  status_code = 403;
+                             }
+                             header->content_type=(char*)get_magictype(sop,file);
+                             sws_http_status_msg(request,st_index,status_code,header,log);
+                       }
                     }
                 }
                 else{
                     /* file */
+                    
+                    if(header->time_last_mod && parse_time(header->time_last_mod,&last_mod)&&
+                       last_mod>=st_file.st_mtime){
+                          status_code = 304;
+                          strcat(erro,"/304.html");
+                          lstat(erro,&st_erro);
+                          sws_http_status_msg(request,st_erro,status_code,header,log);
+                    } 
+                    else
+                    {
                     status_code = 200;
                     *type = 1;
                     lstat(file, &st_file);
                     header->content_type=(char*)get_magictype(sop,file);
                     sws_http_status_msg(request,st_file,status_code,header,log);
+                    }
                 }
             }
             /* we cannot access the file*/
@@ -321,14 +357,13 @@ void sws_http_respond_handler(int fd_connection, char* client_request_line, char
     if(!error_500){
         sws_server_parseline(client_request_line, request);
         // judege CGI
-        if (request->req_code == 1 && sop->cgi_dir != NULL && strncpy(request->req_path, "/cgi-bin", 8) == 0)
+        if (request->req_code == 1 && sop->cgi_dir != NULL && strncmp(request->req_path, "/cgi-bin", 8) == 0)
         {
             /*
              *
              *
              *
              * */
-            printf("in CGI\n");
             //status_code = 0;
             if (status_code == 200)
                 return;
@@ -347,10 +382,12 @@ void sws_http_respond_handler(int fd_connection, char* client_request_line, char
         sws_http_status_msg(request,st_erro,status_code,header,log);
     }
 
+    
 
 
     /* if status code ==  200 return content */
     if(status_code == 200){
+        
         char *content = sws_getContent(request->req_path,type);
         sprintf(response,
                 "HTTP/1.0 %sDate: %sServer: %sLast-Modified: %sContent-Type: %sContent-Length: %zu\r\n\r\n",
