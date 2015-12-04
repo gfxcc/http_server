@@ -18,12 +18,12 @@ int main(int argc, char *argv[]) {
     /* initialization */
     st_opts_props server_props;
     init_opts_props(&server_props);
-    
+
     /* magic initialization */
     if(init_magic(&server_props))
     {
         exit(EXIT_FAILURE);
-    }    
+    }
     /* option analysis */
     int opt = 0, port_to_int;
     while ((opt = getopt(argc, argv, "c:dhi:l:p:")) != -1)
@@ -34,28 +34,28 @@ int main(int argc, char *argv[]) {
             case 'c':
                 server_props.cgi_dir = optarg;
                 break;
-                
+
             // debugging options
             case 'd':
                 server_props.debug_mode = 1;
                 break;
-                
+
             // usage options
             case 'h':
-                usage(); 
+                usage();
                 exit(EXIT_FAILURE);
 				break;
-                
+
             // specify server ip address options
             case 'i':
                 server_props.ip_address = optarg;
                 break;
-                
+
             // log file options
             case 'l':
                 server_props.file_log = optarg;
                 break;
-            
+
             // specify server port
             case 'p':
                 port_to_int = atoi(optarg);
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
                     fprintf(stderr, "Valid port range: 1024 - 65535\n"),
                     exit(EXIT_FAILURE);
                 break;
-            
+
             // invalid arguments
             default:
                 fprintf(stderr, "Invalid argument %c\n", opt);
@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
     }
     //argc -= optind;
     //argv += optind;
-    
+
     server_props.root = argv[optind];
     struct stat st_root;
     lstat(server_props.root, &st_root);
@@ -87,6 +87,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 	// sws_cgi_debug(&server_props);  
+
     /* Daemonize if -d not set */
     /*
     if (!server_props.debug_mode)

@@ -39,7 +39,7 @@ void server_exec(st_opts_props *sop)
     const int on = 1;
     struct addrinfo hints, *res = NULL;
     struct sockaddr_storage ss_client;
-    
+
     // hints is an addrinfo structure points that record
     // properties of the given socket address
     memset(&hints, 0, sizeof (hints));
@@ -47,19 +47,19 @@ void server_exec(st_opts_props *sop)
     hints.ai_protocol = IPPROTO_TCP;    //using TCP protocol
     hints.ai_socktype = SOCK_STREAM;    //specifies socktype as sock_stream
     hints.ai_flags = AI_PASSIVE;        //passive for bind of server socket
-    
+
     // as a substitution of gethostbyname, getaddrinfo supports IPv6
     // given socket address structure returns by list point res
     sws_getaddrinfo(sop->ip_address, sop->port, &hints, &res);
     fd_socket = sws_socket(res->ai_family, res->ai_socktype, res->ai_protocol);
     sws_setsockopt(fd_socket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
     sws_bind(fd_socket, res->ai_addr, res->ai_addrlen);
-    
+
     if (!sop->debug_mode)
         sws_listen(fd_socket, MAX_BACK_LOG);
     else
         sws_listen(fd_socket, 1);
-    
+
     //free res to prevent a memory leak
     freeaddrinfo(res);
     while(1)
@@ -78,8 +78,7 @@ void server_exec(st_opts_props *sop)
                 printf("[Client] %s connected \n", client_ip_addr);
                 char content[MAX_BUFFER_LEN];
                 /* The nc's enter is different from telnet */
-                char *enter_telnet = "\r\n";
-                char *enter_nc = "\n";
+                char *enter_telnet = "\r\n\r\n";
                 while (sws_read(fd_connection, client_request, MAX_BUFFER_LEN) > 0)
                 {
                     if (strlen(client_request) > 0)
@@ -87,7 +86,7 @@ void server_exec(st_opts_props *sop)
                         if(strlen(client_request)+strlen(content) <MAX_BUFFER_LEN)
                         {
                             strcat(content,client_request);
-                            if(strcmp(enter_telnet,client_request)==0 || strcmp(enter_nc,client_request)==0)
+                            if(strncmp(content+strlen(content)-4,enter_telnet,4) == 0)
                             {
                                 sws_http_respond_handler(fd_connection, content, client_ip_addr, sop,0);
                                 bzero(content,MAX_BUFFER_LEN);
@@ -108,11 +107,10 @@ void server_exec(st_opts_props *sop)
 
                     bzero(client_request, MAX_BUFFER_LEN);
                 }
-                
+
                 //sws_http_request_handler(fd_connection, client_ip_addr, sop);
                 close(fd_connection);
                 printf("[Client] %s diconnected \n", client_ip_addr);
-                exit(EXIT_SUCCESS);
         }
         else    // fork child process for each new accepted client
         {
@@ -127,8 +125,7 @@ void server_exec(st_opts_props *sop)
                 char content[MAX_BUFFER_LEN];
 
                 /* The nc's enter is different from telnet */
-                char *enter_telnet = "\r\n";
-                char *enter_nc = "\n";
+                char *enter_telnet = "\r\n\r\n";
                 while (sws_read(fd_connection, client_request, MAX_BUFFER_LEN) > 0)
                 {
                     if (strlen(client_request) > 0)
@@ -136,7 +133,7 @@ void server_exec(st_opts_props *sop)
                         if(strlen(client_request)+strlen(content) < MAX_BUFFER_LEN)
                         {
                             strcat(content,client_request);
-                            if(strcmp(enter_telnet,client_request)==0 || strcmp(enter_nc,client_request)==0)
+                            if(strncmp(content+strlen(content)-4,enter_telnet,4) == 0)
                             {
                                 sws_http_respond_handler(fd_connection, content, client_ip_addr, sop,0);
                                 bzero(content,MAX_BUFFER_LEN);
