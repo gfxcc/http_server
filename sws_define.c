@@ -202,3 +202,36 @@ void sws_daemon(int nochdir, int noclose)
     if (daemon(nochdir, noclose) < 0)
         sws_stderror("Fail to daemonize");
 }
+
+
+char* sws_getContent(char* path, int file)
+{
+    char* content = (char*) malloc (sizeof(char) * MAX_CONTENT_LEN);
+    bzero(content, MAX_CONTENT_LEN);
+    /* path indicate file */
+    if (file)
+    {
+        int fd = open(path, O_RDONLY);
+        if (fd == -1)
+        {
+            // open file fail
+            sws_stderror("Fail to open file in sws_getContent");
+            return NULL;
+        }
+
+    }
+    else /* path indicate directory*/
+    {
+        DIR* dir;
+        dir = opendir(path);
+        struct dirent* entry;
+        while(entry = readdir(dir)) {
+            if (entry->d_name[0] == '.')
+                continue;
+            strcat(content, entry->d_name);
+            strcat(content, "\r\n");
+        }
+    }
+
+    return content;
+}

@@ -27,6 +27,7 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <semaphore.h>
+#include <dirent.h>
 
 #define MAX_BACK_LOG        1024
 #define MAX_CONTENT_LEN     8192
@@ -45,6 +46,10 @@ sig_t sws_signal(int sig, sig_t sig_chld_handler);
 
 ssize_t sws_read(int fd_conn, void *buf, size_t len);
 ssize_t sws_write(int fd_conn, void *buf, size_t len);
+
+/* get file at path content. file == 1 mean path indicate file; file == 0, path indicate directory.
+ * return file list in the directory. Formate as: file.html\r\nfile2.html\r\nfile3.html\r\n      */
+char* sws_getContent(char* path, int file);
 
 void sws_stderror(const char* message);
 void sws_getaddrinfo(const char *host, const char *serv, const struct addrinfo *hints, struct addrinfo **res);
