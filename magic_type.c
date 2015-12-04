@@ -24,9 +24,10 @@ int init_magic(  st_opts_props*server_props ){
 const char* get_magictype(st_opts_props*server_props , char*path){
     const char*tmp = magic_file(server_props->cookie,path);
     if(tmp==NULL)
-         return "text/html";
+         return "text/html\r\n";
     else 
-         return tmp;
+         strcat((char*)tmp,"\r\n");
+         return (const char*)tmp;
 
 
 }

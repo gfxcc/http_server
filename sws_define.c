@@ -249,7 +249,9 @@ char* sws_getContent(char* path, int file)
     return content;
 }
 
+/* change the char time to a time_t struct time */
 int parse_time(char*if_modify, time_t*tms){
+ 
     char*tmp;
     struct tm st;
     memset(&st,0,sizeof(struct tm));

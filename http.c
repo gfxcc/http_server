@@ -238,23 +238,23 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                     {
                         /* no index.html, return directory */
                         if (errno == ENOENT)
-                        {
-
-                            if(header->time_last_mod && parse_time(header->time_last_mod,&last_mod)&&
+                        {     
+                              /* if files's last modify time is smaller than if_modify_since then return 403 */
+                              if(header->time_last_mod && parse_time(header->time_last_mod,&last_mod)&&
                                  last_mod>=st_file.st_mtime){
-                                 status_code = 304;
-                                 strcat(erro,"/304.html");
-                                 lstat(erro,&st_erro);
-                                 sws_http_status_msg(request,st_erro,status_code,header,log);
-                            }
-                            else
-                            {
-
+                                     status_code = 304;
+                                     strcat(erro,"/304.html");
+                                     lstat(erro,&st_erro);
+                                     sws_http_status_msg(request,st_erro,status_code,header,log);
+                              }
+                              else
+                              {
                                  status_code = 200;
                                  *type = 0;
                                  header->content_type=(char*)get_magictype(sop,file);
                                  sws_http_status_msg(request,st_file,status_code,header,log);
-                            }
+                              }
+                            
                         }
                         else
                         {
