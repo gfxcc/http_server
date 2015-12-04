@@ -29,6 +29,7 @@
 #include <semaphore.h>
 #include <dirent.h>
 #include <magic.h>
+#include <time.h>
 
 #define MAX_BACK_LOG        1024
 #define MAX_CONTENT_LEN     8192
@@ -51,7 +52,7 @@ ssize_t sws_write(int fd_conn, void *buf, size_t len);
 /* get file at path content. file == 1 mean path indicate file; file == 0, path indicate directory.
  * return file list in the directory. Formate as: file.html\r\nfile2.html\r\nfile3.html\r\n      */
 char* sws_getContent(char* path, int file);
-
+int parse_time(char*if_modify , time_t *tms);
 void sws_stderror(const char* message);
 void sws_getaddrinfo(const char *host, const char *serv, const struct addrinfo *hints, struct addrinfo **res);
 void sws_setsockopt(int fd_socket, int level, int optname, const void *optval, socklen_t optlen);
