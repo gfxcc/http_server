@@ -6,6 +6,7 @@
 //  Copyright (C) 2015 Chen Wei. All rights reserved.
 //
 
+#include "sws_define.h"
 #include "sws.h"
 #include "http.h"
 #include "server.h"
