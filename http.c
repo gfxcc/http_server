@@ -185,7 +185,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
     if (request->req_path)
     {
         strcat(file, request->req_path);
-        strcpy(request->req_path,file);
+        request->req_path = file;
     }
     if (request->type_conn == NULL || request->req_code == -1)
     {
@@ -240,7 +240,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                     {
                         /* no index.html, return directory */
                         if (errno == ENOENT)
-                        {     
+                        {
                               /* if files's last modify time is smaller than if_modify_since then return 403 */
                               if(header->time_last_mod && parse_time(modified_time,&last_mod)&&
                                  last_mod>=st_file.st_mtime){
@@ -256,7 +256,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                                  header->content_type=(char*)get_magictype(sop,file);
                                  sws_http_status_msg(request,st_file,status_code,header,log);
                               }
-                            
+
                         }
                         else
                         {
@@ -362,7 +362,7 @@ void sws_http_respond_handler(int fd_connection, char* client_request_line, char
         if (request->req_code == 1 && sop->cgi_dir != NULL && strncmp(request->req_path, "/cgi-bin", 8) == 0)
         {
             status_code = sws_cgi_request_handler(fd_connection, request,
-						sop, client_ip_addr); 
+						sop, client_ip_addr);
             if (status_code == 200)
                 return;
         }
