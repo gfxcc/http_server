@@ -151,8 +151,7 @@ void sws_server_parseline(char* client_request_line, st_request *req)
             req->req_query = malloc(strlen(token2) + 1);
             strcpy(req->req_query, token2);
             req->req_query[strlen(token2)] = '\0';
-            printf("init: %s\n", req->req_query);
-            
+
             for (int t = 0; t != (int)strlen(token2); t++)
             {
                 if (token2[t] == '?')
@@ -189,7 +188,6 @@ void sws_server_parseline(char* client_request_line, st_request *req)
         req->req_type = req_type;
         req->req_code = 0;
     }
-    printf("atout: %s\n", req->req_query);
 
 }
 
