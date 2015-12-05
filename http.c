@@ -112,7 +112,7 @@ void sws_server_parseline(char* client_request_line, st_request *req)
 {
     char *token, *token2, *str1, *str2;
     char *save;
-    char *tmp=NULL;
+    char tmp[MAX_BUFFER_LEN];
     strcpy(tmp,client_request_line);
     char req_type[1024];
     int i = 0, j = 0;
