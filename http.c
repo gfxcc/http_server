@@ -110,9 +110,11 @@ void sws_server_parseline(char* client_request_line, st_request *req)
 {
     char *token, *token2, *str1, *str2;
     char *save;
+    char *tmp;
+    strcpy(tmp,client_request_line);
     char req_type[1024];
     int i = 0, j = 0;
-    token = strtok_r(client_request_line, "\r\n", &str1);
+    token = strtok_r(tmp, "\r\n", &str1);
     while(token != NULL)
     {
         if(i == 0)
