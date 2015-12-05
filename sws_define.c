@@ -262,8 +262,6 @@ int parse_time(char*if_modify, time_t*tms){
     if((tmp=strptime(if_modify, "%a, %d %b %Y %T GMT",&st))==NULL){
         return 0;
     }
-    if(*tmp)
-       return 0;
     *tms = timegm(&st);
     return 1;
 
