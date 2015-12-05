@@ -223,6 +223,7 @@ char* sws_getContent(char* path, int file)
         {
             // open file fail
             sws_stderror("Fail to open file in sws_getContent");
+
             return NULL;
         }
         read(fd, content, MAX_CONTENT_LEN);

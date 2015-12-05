@@ -26,6 +26,7 @@ typedef struct client_request
     int   req_code;
     char* req_type;
     char* req_path;
+    char* req_query;
     char* req_string;
     char* type_conn;
 }st_request;
