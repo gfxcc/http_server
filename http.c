@@ -22,6 +22,7 @@
 #include "sws_define.h"
 #include "cgi.h"
 
+char*modified_time;
 /* struct initial (done!) */
 void sws_header_init(st_header *header)
 {
@@ -108,7 +109,7 @@ char* sws_get_mtime(time_t t)
 void sws_server_parseline(char* client_request_line, st_request *req)
 {
     char *token, *token2, *str1, *str2;
-    char *save, *modified_time;
+    char *save;
     char req_type[1024];
     int i = 0, j = 0;
     token = strtok_r(client_request_line, "\r\n", &str1);
@@ -241,7 +242,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                         if (errno == ENOENT)
                         {     
                               /* if files's last modify time is smaller than if_modify_since then return 403 */
-                              if(header->time_last_mod && parse_time(header->time_last_mod,&last_mod)&&
+                              if(header->time_last_mod && parse_time(modified_time,&last_mod)&&
                                  last_mod>=st_file.st_mtime){
                                      status_code = 304;
                                      strcat(erro,"/304.html");
@@ -268,7 +269,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                     }
                     else
                     {   /* index.html */
-                        if(header->time_last_mod && parse_time(header->time_last_mod,&last_mod)&&
+                        if(header->time_last_mod && parse_time(modified_time,&last_mod)&&
                            last_mod>=st_file.st_mtime){
                                status_code = 304;
                                strcat(erro,"/304.html");
@@ -294,7 +295,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                 else{
                     /* file */
 
-                    if(header->time_last_mod && parse_time(header->time_last_mod,&last_mod)&&
+                    if(header->time_last_mod && parse_time(modified_time,&last_mod)&&
                        last_mod>=st_file.st_mtime){
                           status_code = 304;
                           strcat(erro,"/304.html");
