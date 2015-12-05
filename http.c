@@ -139,6 +139,7 @@ void sws_server_parseline(char* client_request_line, st_request *req)
         token = strtok_r(NULL,"\r\n",&str1);
         i++;
     }
+    req->req_string = save;
     token2 = strtok_r(NULL, " ", &save);
     while (token2 != NULL)
     {
@@ -170,7 +171,7 @@ void sws_server_parseline(char* client_request_line, st_request *req)
         token2 = strtok_r(NULL, " ", &save);
         j++;
     }
-    req->req_string = client_request_line;
+    //req->req_string = client_request_line;
     /* judge head legal */
     if (j != 3)
     {
