@@ -189,7 +189,7 @@ sws_cgi_parse_meta_vars(st_request *request, st_opts_props *sop, char *client_ip
 	request_meta_vars->server_software = buffer + index;
 
 	/* QUERY_STRING */
-	char *path = request->req_path;
+	char *path = request->req_query;
 	size_t path_size = strlen(path);
 	char *query_string_begin;
 	query_string_begin = strchr(path, '?');
