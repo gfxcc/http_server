@@ -57,7 +57,7 @@ sws_cgi_request_handler(int fd_conn, st_request *request, st_opts_props *sop, ch
 				if (strncmp(line, exec_err, exec_err_len) == 0) {
 					return 500;
 				}
-				/* write response line the several headers */
+				/* write response line and headers */
 				t = time(NULL);
 				time_gmt = gmtime(&t);
 				strftime(gtime, 50, "%a, %d %b %Y %T GMT", time_gmt);
@@ -88,16 +88,6 @@ sws_cgi_request_handler(int fd_conn, st_request *request, st_opts_props *sop, ch
 		}
 	}
 	return 200;
-}
-
-void
-sws_cgi_debug(st_opts_props *sop) 
-{
-	st_request request;
-	request.req_path = "/cgi-bin?";
-	request.req_type = "GET";
-
-	sws_cgi_request_handler(0, &request, sop, "192.168.1.5");
 }
 
 static void
@@ -131,6 +121,7 @@ sws_cgi_parse_meta_vars(st_request *request, st_opts_props *sop, char *client_ip
 	const char *server_software_str = "SWS/1.0";
 	char *server_name;
 	char *buffer = request_meta_vars->buffer;
+	struct utsname utsname_buf;
 
 	memset(request_meta_vars, 0, sizeof(sws_request_meta_variables_t));
 
@@ -156,12 +147,20 @@ sws_cgi_parse_meta_vars(st_request *request, st_opts_props *sop, char *client_ip
 	request_meta_vars->request_method = buffer + index;
 
 	/* SERVER_NAME */
-	if (sop->ip_address != NULL) {
-		server_name = sop->ip_address;
+	if (uname(&utsname_buf) == 0) {
+		if (utsname_buf.nodename != NULL) {
+			server_name = utsname_buf.nodename;
+		}
 	}
-	else {
-		server_name = "127.0.0.1";
+	if (server_name == NULL) {
+		if (sop->ip_address != NULL) {
+			server_name = sop->ip_address;
+		}
+		else {
+			server_name = "127.0.0.1";
+		}
 	}
+	
 	index += size;
 	size = strlen(server_name);
 	++size;
@@ -265,27 +264,23 @@ sws_cgi_parse_meta_vars(st_request *request, st_opts_props *sop, char *client_ip
 	}
 }
 
-/* return 1 for executable, 0 for others */
+/* return value: 1 for regular executable file, otherwise return 0 */
 static int
 sws_cgi_check_script(char *cgi_root, char *script_path, size_t script_path_size, char *buf)
 {
 	struct stat	stat_buf;
 
 	sws_cgi_path_combine(cgi_root, strlen(cgi_root), script_path, script_path_size, buf);
-	
 	if (access(buf, X_OK) == -1) {
 		return 0;
 	}
-	else {
-		if (lstat(buf, &stat_buf) < 0) {
-			return 0;
-		}
-		if (S_ISREG(stat_buf.st_mode)) {
-			return 1;
-		}
+	if (lstat(buf, &stat_buf) < 0) {
 		return 0;
 	}
-	return access(buf, X_OK);
+	if (!S_ISREG(stat_buf.st_mode)) {
+		return 0;
+	}
+	return 1;
 }
 
 static void
