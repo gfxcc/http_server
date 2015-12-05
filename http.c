@@ -400,7 +400,7 @@ void sws_http_respond_handler(int fd_connection, char* client_request_line, char
 
         char *content = sws_getContent(request->req_path,type);
         sprintf(response,
-                "HTTP/1.0 %sDate: %sServer: %sLast-Modified: %sContent-Type: %sContent-Length: %zu\r\n\r\n",
+                "HTTP/1.0 %sDate: %s\r\nServer: %sLast-Modified: %s\r\nContent-Type: %sContent-Length: %zu\r\n\r\n",
                 sws_get_http_status(status_code), header->time_now, header->server_name,
                 header->time_last_mod, header->content_type, strlen(content));
         if(strcmp(request->req_type,"GET")==0)
@@ -414,7 +414,7 @@ void sws_http_respond_handler(int fd_connection, char* client_request_line, char
         sprintf(erro, "%s/%d.html",erro,status_code);
         char *content = sws_getContent(erro,type);
         sprintf(response,
-                "HTTP/1.0 %sDate: %sServer: %sLast-Modified: %sContent-Type: %sContent-Length: %zu\r\n\r\n",
+                "HTTP/1.0 %sDate: %s\r\nServer: %sLast-Modified: %s\r\nContent-Type: %sContent-Length: %zu\r\n\r\n",
                 sws_get_http_status(status_code), header->time_now, header->server_name,
                 header->time_last_mod, header->content_type, strlen(content));
         if(request->req_type!=NULL){
