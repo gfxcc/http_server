@@ -139,7 +139,8 @@ void sws_server_parseline(char* client_request_line, st_request *req)
         token = strtok_r(NULL,"\r\n",&str1);
         i++;
     }
-    req->req_string = save;
+    req->req_string = malloc(sizeof(char) * strlen(save) + 1);
+    strcpy(req->req_string, save);
     token2 = strtok_r(NULL, " ", &save);
     while (token2 != NULL)
     {
