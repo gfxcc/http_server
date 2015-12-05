@@ -87,20 +87,22 @@ char* sws_get_http_status(int status_code)
 /* fetch time (done!) */
 char* sws_get_request_time()
 {
-    char* gtime = malloc(25 * sizeof(char));
+    char* gtime = malloc(50 * sizeof(char));
     time_t t = time(NULL);
     struct tm *time_gmt;
     time_gmt = gmtime(&t);
-    strcpy(gtime, asctime(time_gmt));
+    //strcpy(gtime, asctime(time_gmt));
+    strftime(gtime, 50, "%a, %d %b %Y %T GMT", time_gmt);
     return gtime;
 }
 
 char* sws_get_mtime(time_t t)
 {
-    char* mtime = malloc(25 * sizeof(char));
+    char* mtime = malloc(50 * sizeof(char));
     struct tm *mtime_gmt;
     mtime_gmt = gmtime(&t);
-    strcpy(mtime, asctime(mtime_gmt));
+    //strcpy(mtime, asctime(mtime_gmt));
+    strftime(mtime, 50, "%a, %d %b %Y %T GMT", mtime_gmt);
     return mtime;
 }
 
@@ -187,7 +189,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
     if (request->req_path)
     {
         strcat(file, request->req_path);
-        strcpy(request->req_path,file);
+        request->req_path = file;
     }
     if (request->type_conn == NULL || request->req_code == -1)
     {
@@ -242,7 +244,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                     {
                         /* no index.html, return directory */
                         if (errno == ENOENT)
-                        {     
+                        {
                               /* if files's last modify time is smaller than if_modify_since then return 403 */
                               if(header->time_last_mod && parse_time(modified_time,&last_mod)&&
                                  last_mod>=st_file.st_mtime){
@@ -258,7 +260,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                                  header->content_type=(char*)get_magictype(sop,file);
                                  sws_http_status_msg(request,st_file,status_code,header,log);
                               }
-                            
+
                         }
                         else
                         {
@@ -364,7 +366,7 @@ void sws_http_respond_handler(int fd_connection, char* client_request_line, char
         if (request->req_code == 1 && sop->cgi_dir != NULL && strncmp(request->req_path, "/cgi-bin", 8) == 0)
         {
             status_code = sws_cgi_request_handler(fd_connection, request,
-						sop, client_ip_addr); 
+						sop, client_ip_addr);
             if (status_code == 200)
                 return;
         }
