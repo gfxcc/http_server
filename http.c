@@ -416,7 +416,7 @@ void sws_http_respond_handler(int fd_connection, char* client_request_line, char
         sprintf(response,
                 "HTTP/1.0 %sDate: %sServer: %sLast-Modified: %sContent-Type: %sContent-Length: %zu\r\n\r\n",
                 sws_get_http_status(status_code), header->time_now, header->server_name,
-                header->time_last_mod, header->content_type, header->content_length);
+                header->time_last_mod, header->content_type, strlen(content));
         if(request->req_type!=NULL){
             if(strcmp(request->req_type,"GET")==0){
                 sprintf(response,"%s%s",response,content);
