@@ -88,10 +88,10 @@ int main(int argc, char *argv[]) {
     }
 
     /* Daemonize if -d not set */
-    /*
+    
     if (!server_props.debug_mode)
         sws_daemon(1, 0);
-    */
+    
     server_exec(&server_props);
     return EXIT_SUCCESS;
 }
