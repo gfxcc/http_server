@@ -191,7 +191,6 @@ void sws_server_parseline(char* client_request_line, st_request *req)
 int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                      st_request *request, st_header *header, st_log *log , int *type)
 {
-    printf("1:%s\n%s\n", request->req_path, request->req_query);
     time_t last_mod;
     int status_code = 500;
     struct stat st_file, st_erro;
@@ -199,7 +198,6 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
     bzero(file, PATH_MAX);
     char erro[PATH_MAX];
     bzero(erro, PATH_MAX);
-    printf("2:%s\n%s", request->req_path, request->req_query);
     if (request->req_path[1] == '~')
     {
         strcpy(file, getenv("HOME"));
@@ -219,7 +217,6 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
     }
     getcwd(erro, PATH_MAX);
     strcat(erro, "/response_msg/");
-        printf("%s\n", file);
     if (request->type_conn == NULL || request->req_code == -1)
     {
         status_code = 400;
