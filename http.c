@@ -87,20 +87,22 @@ char* sws_get_http_status(int status_code)
 /* fetch time (done!) */
 char* sws_get_request_time()
 {
-    char* gtime = malloc(25 * sizeof(char));
+    char* gtime = malloc(50 * sizeof(char));
     time_t t = time(NULL);
     struct tm *time_gmt;
     time_gmt = gmtime(&t);
-    strcpy(gtime, asctime(time_gmt));
+    //strcpy(gtime, asctime(time_gmt));
+    strftime(gtime, 50, "%a, %d %b %Y %T GMT", time_gmt);
     return gtime;
 }
 
 char* sws_get_mtime(time_t t)
 {
-    char* mtime = malloc(25 * sizeof(char));
+    char* mtime = malloc(50 * sizeof(char));
     struct tm *mtime_gmt;
     mtime_gmt = gmtime(&t);
-    strcpy(mtime, asctime(mtime_gmt));
+    //strcpy(mtime, asctime(mtime_gmt));
+    strftime(mtime, 50, "%a, %d %b %Y %T GMT", mtime_gmt);
     return mtime;
 }
 
