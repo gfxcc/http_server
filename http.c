@@ -24,7 +24,7 @@
 //char* modi_time=(char*)malloc(100*sizeof(char));
 char modi_time[1000];
 /* struct initial (done!) */
-char*modified_time=" Sat, 05 Dec 2015 03:23:01 GMT";
+//char*modified_time=" Sat, 05 Dec 2015 03:23:01 GMT";
 void sws_header_init(st_header *header)
 {
     header->time_now = sws_get_request_time();
@@ -289,6 +289,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                                  last_mod>=st_file.st_mtime){
                                      status_code = 304;
                                      strcat(erro,"/304.html");
+                                     header->content_type=(char*)get_magictype(sop,file);
                                      lstat(erro,&st_erro);
                                      sws_http_status_msg(request,st_erro,status_code,header,log);
                               }
@@ -316,6 +317,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                            last_mod>=st_file.st_mtime){
                                status_code = 304;
                                strcat(erro,"/304.html");
+                               header->content_type=(char*)get_magictype(sop,file);
                                lstat(erro,&st_erro);
                                sws_http_status_msg(request,st_erro,status_code,header,log);
                         }
@@ -341,6 +343,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                        last_mod>=st_file.st_mtime){
                           status_code = 304;
                           strcat(erro,"/304.html");
+                          header->content_type=(char*)get_magictype(sop,file);
                           lstat(erro,&st_erro);
                           sws_http_status_msg(request,st_erro,status_code,header,log);
                     }
