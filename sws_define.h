@@ -68,6 +68,7 @@ void sws_daemon(int nochdir, int noclose);
 void sws_pipe(int fd_pipe[2]);
 
 void* sws_malloc(size_t size);
+void sws_daemon(int nochdir, int noclose);
 
 const char *inet_ntop(int family, const void *src, char *dst, socklen_t size);
 
