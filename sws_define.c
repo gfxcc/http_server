@@ -256,14 +256,12 @@ char* sws_getContent(char* path, int file)
 
 /* change the char time to a time_t struct time */
 int parse_time(char*if_modify, time_t*tms){
-
-    char*tmp;
-    struct tm st;
-    memset(&st,0,sizeof(struct tm));
-    if((tmp=strptime(if_modify, "%a, %d %b %Y %T GMT",&st))==NULL){
+    struct tm tm;
+    memset(&tm,0,sizeof(struct tm));
+    if(strptime(if_modify, " %a, %d %b %Y %H:%M:%S GMT",&tm)==0){
         return 0;
     }
-    *tms = timegm(&st);
+    *tms = timegm(&tm);
     return 1;
 
 }
