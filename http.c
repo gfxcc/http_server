@@ -21,9 +21,10 @@
 #include "magic_type.h"
 #include "sws_define.h"
 #include "cgi.h"
-
-char*modified_time;
+//char* modi_time=(char*)malloc(100*sizeof(char));
+char modi_time[1000];
 /* struct initial (done!) */
+char*modified_time=" Sat, 05 Dec 2015 03:23:01 GMT";
 void sws_header_init(st_header *header)
 {
     header->time_now = sws_get_request_time();
@@ -110,8 +111,10 @@ char* sws_get_mtime(time_t t)
 /* get request from client (done!)*/
 void sws_server_parseline(char* client_request_line, st_request *req)
 {
+//    printf("%d\n",(int)strlen(modified_time));
     char *token, *token2, *str1, *str2;
     char *save;
+    char*modify_time;
     char tmp[MAX_BUFFER_LEN];
     strcpy(tmp,client_request_line);
     char req_type[1024];
@@ -129,7 +132,8 @@ void sws_server_parseline(char* client_request_line, st_request *req)
                   strlen("If-Modified-Since")) == 0)
             {
                 str2 = token;
-                strtok_r(str2,":",&modified_time);
+                strtok_r(str2,":",&modify_time);
+                strcpy(modi_time,modify_time);
             }
         }
         token = strtok_r(NULL,"\r\n",&str1);
@@ -148,7 +152,7 @@ void sws_server_parseline(char* client_request_line, st_request *req)
             strcpy(req->req_query, token2);
             req->req_query[strlen(token2)] = '\0';
             printf("init: %s\n", req->req_query);
-
+            
             for (int t = 0; t != (int)strlen(token2); t++)
             {
                 if (token2[t] == '?')
@@ -186,6 +190,7 @@ void sws_server_parseline(char* client_request_line, st_request *req)
         req->req_code = 0;
     }
     printf("atout: %s\n", req->req_query);
+
 }
 
 int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
@@ -272,7 +277,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                         if (errno == ENOENT)
                         {
                               /* if files's last modify time is smaller than if_modify_since then return 403 */
-                              if(header->time_last_mod && parse_time(modified_time,&last_mod)&&
+                              if(strlen(modi_time)==30 && parse_time(modi_time,&last_mod)&&
                                  last_mod>=st_file.st_mtime){
                                      status_code = 304;
                                      strcat(erro,"/304.html");
@@ -299,7 +304,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                     }
                     else
                     {   /* index.html */
-                        if(header->time_last_mod && parse_time(modified_time,&last_mod)&&
+                        if(strlen(modi_time)==30&& parse_time(modi_time,&last_mod)&&
                            last_mod>=st_file.st_mtime){
                                status_code = 304;
                                strcat(erro,"/304.html");
@@ -324,8 +329,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
                 }
                 else{
                     /* file */
-
-                    if(header->time_last_mod && parse_time(modified_time,&last_mod)&&
+                    if(strlen(modi_time)==30 && parse_time(modi_time,&last_mod)&&
                        last_mod>=st_file.st_mtime){
                           status_code = 304;
                           strcat(erro,"/304.html");

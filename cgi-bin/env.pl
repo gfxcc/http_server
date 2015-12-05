@@ -3,10 +3,10 @@
 print "Content-type: text/html\r\n";
 print "\r\n";
 
-print "<font size=+1>Environment</font>\n";
+print "<html><head></head><body><ul>\n";
 foreach (sort keys %ENV)
 {
-  print "<b>$_</b>: $ENV{$_}<br>\n";
+  print "<li>$_: $ENV{$_}</li>\n";
 }
-
+print "</ul></body></html>";
 1;
