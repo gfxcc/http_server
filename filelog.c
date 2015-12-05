@@ -39,7 +39,7 @@ void filelog_record(st_opts_props *sop, st_log *log, char* erro)
         /* flock(fd_log, LOCK_EX); */
         char logline[MAX_BUFFER_LEN]; bzero(logline, MAX_BUFFER_LEN);
 
-        sprintf(logline, "%s %s \"%s\" %d %lu\n\n",
+        sprintf(logline, "%s %s \"%s\" %d %lu\n",
                 log->ip_addr, log->time, log->req, log->http_status, log->resp_len);
 
         while(write(fd_log, logline, strlen(logline)) < 0);

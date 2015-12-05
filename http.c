@@ -410,6 +410,11 @@ void sws_http_respond_handler(int fd_connection, char* client_request_line, char
             status_code = sws_cgi_request_handler(fd_connection, request,
 						sop, client_ip_addr);
             if (status_code == 200)
+				log->req = request->req_string;
+				log->http_status = 200;
+				log->resp_len = 0;
+				
+				filelog_record(sop, log, erro);
                 return;
         }
         else
