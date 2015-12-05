@@ -142,6 +142,14 @@ void sws_server_parseline(char* client_request_line, st_request *req)
             strcpy(req_type, token2);
         }
         else if (j == 1){
+            for (int t = 0; t != (int)strlen(token2); t++)
+            {
+                if (token2[t] == '?')
+                {
+                    token2[t] = '\0';
+                    break;
+                }
+            }
             req->req_path = malloc(strlen(token2));
             strcpy(req->req_path, token2);
         }
