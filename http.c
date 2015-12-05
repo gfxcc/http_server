@@ -170,7 +170,6 @@ void sws_server_parseline(char* client_request_line, st_request *req)
         token2 = strtok_r(NULL, " ", &save);
         j++;
     }
-
     req->req_string = client_request_line;
     /* judge head legal */
     if (j != 3)
@@ -201,6 +200,16 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
     bzero(file, PATH_MAX);
     char erro[PATH_MAX];
     bzero(erro, PATH_MAX);
+    /* illegal request */
+    if (request->req_code == -1)
+    {
+        status_code = 400;
+        strcat(erro, "/400.html");
+        lstat(erro, &st_erro);
+        sws_http_status_msg(request,st_erro,status_code,header,log);
+        return status_code;
+    }
+
     if (request->req_path[1] == '~')
     {
         strcpy(file, getenv("HOME"));
@@ -220,7 +229,7 @@ int sws_http_request_handler(char* client_request_line, st_opts_props *sop,
     }
     getcwd(erro, PATH_MAX);
     strcat(erro, "/response_msg/");
-    if (request->type_conn == NULL || request->req_code == -1)
+    if (request->type_conn == NULL)
     {
         status_code = 400;
         strcat(erro, "/400.html");
