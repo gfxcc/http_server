@@ -230,6 +230,7 @@ char* sws_getContent(char* path, int file)
     }
     else /* path indicate directory*/
     {
+        strcat(content, "<html>\r\n<head>\r\n</head>\r\n<body>\r\n<ul>\r\n");
         DIR* dir;
         dir = opendir(path);
         struct dirent* entry;
@@ -241,9 +242,12 @@ char* sws_getContent(char* path, int file)
             }
             if (entry->d_name[0] == '.')
                 continue;
+            strcat(content, "<li>");
             strcat(content, entry->d_name);
+            strcat(content, "</li>");
             strcat(content, "\r\n");
         }
+        strcat(content, "</ul>\r\n</body>\r\n</html>");
     }
 
     return content;
@@ -251,7 +255,7 @@ char* sws_getContent(char* path, int file)
 
 /* change the char time to a time_t struct time */
 int parse_time(char*if_modify, time_t*tms){
- 
+
     char*tmp;
     struct tm st;
     memset(&st,0,sizeof(struct tm));
@@ -262,5 +266,5 @@ int parse_time(char*if_modify, time_t*tms){
        return 0;
     *tms = timegm(&st);
     return 1;
-            
+
 }
